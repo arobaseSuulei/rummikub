@@ -3,18 +3,9 @@
 #ifndef JOUEUR_H
 #define JOUEUR_H
 
-typedef struct Joueur{
+#include "struct.h"
 
-    int pseudo;
-    int estIa;
-
-
-
-
-
-
-}Joueur;
-
-Joueur joueur_create(int nom,int type);
+Joueur * joueur_create(int *nb);
+int nbr_joueur(int n);
 
 #endif

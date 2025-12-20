@@ -9,7 +9,7 @@
 
 typedef struct Joueur{
 
-    char *pseudo;
+    char pseudo[23];
     int estIa;
 
 

@@ -1,0 +1,23 @@
+main.c:24:23: error: implicit declaration of function 'joueur_create' is invalid in C99 [-Werror,-Wimplicit-function-declaration]
+    Joueur *players = joueur_create(&nb_joueurs);
+                      ^
+main.c:24:13: warning: incompatible integer to pointer conversion initializing 'Joueur *' (aka 'struct Joueur *') with an expression of type 'int' [-Wint-conversion]
+    Joueur *players = joueur_create(&nb_joueurs);
+            ^         ~~~~~~~~~~~~~~~~~~~~~~~~~~
+main.c:36:5: error: implicitly declaring library function 'free' with type 'void (void *)' [-Werror,-Wimplicit-function-declaration]
+    free(players);
+    ^
+main.c:36:5: note: include the header <stdlib.h> or explicitly provide a declaration for 'free'
+1 warning and 2 errors generated.
+joueur.c:25:23: error: implicitly declaring library function 'malloc' with type 'void *(unsigned long)' [-Werror,-Wimplicit-function-declaration]
+    Joueur *players = malloc((*nb) * sizeof(Joueur));
+                      ^
+joueur.c:25:23: note: include the header <stdlib.h> or explicitly provide a declaration for 'malloc'
+joueur.c:36:20: warning: format specifies type 'char *' but the argument has type 'char (*)[23]' [-Wformat]
+        scanf("%s",&players[i].pseudo);
+               ~~  ^~~~~~~~~~~~~~~~~~
+joueur.c:41:5: error: void function 'joueur_create' should not return a value [-Wreturn-type]
+    return players;
+    ^      ~~~~~~~
+1 warning and 2 errors generated.
+make: *** [all] Error 1
