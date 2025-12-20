@@ -41,7 +41,7 @@ void afficher_tuiles(Tuile t[], int nb_tuiles){
     const char *couleurs[] = {"Jaune", "Rouge", "Noir", "Bleu"};
     
     for(int i = 0; i < nb_tuiles; i++){
-        printf("[%s %d] ", couleurs[t[i].couleur], t[i].valeur);
+        printf("[%s %d]\n ", couleurs[t[i].couleur], t[i].valeur);
     }
     printf("\n");
 }
