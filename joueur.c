@@ -20,9 +20,10 @@ int nbr_joueur(){
 Joueur* joueur_create(int *nb){
 
 
+    // on récup le nombre de joueurs
     *nb = nbr_joueur();
 
-    // On alloue un tableau de Joueurs de taille nb
+    // On alloue un tableau de Joueurs de taille nombre de joueur
     Joueur *players = malloc((*nb) * sizeof(Joueur));
 
     
@@ -33,10 +34,12 @@ Joueur* joueur_create(int *nb){
         printf("|                    |");
         printf("|                    |");
         printf("|                    |");
-        printf("| Pseudo le plus cool : \n|");
+        printf("|\n|");
         scanf("%s",players[i].pseudo);
 
     }
+
+    
 
 
     return players;
