@@ -38,7 +38,9 @@ typedef struct Tuile{
 typedef struct Plateau{
 
     Tuile chevalet;
-    //int taille_combinaison;
+    //int taille_combinaison; En faut il ?
+
+    
 
 
 }Plateau;
