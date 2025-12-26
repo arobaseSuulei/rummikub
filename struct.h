@@ -11,6 +11,7 @@ typedef struct Joueur{
 
     char pseudo[23];
     int estIa;
+    //Tuile mainJoueur[40];
 
 
 
@@ -31,6 +32,17 @@ typedef struct Tuile{
     int couleur;
 
 }Tuile;
+
+
+
+typedef struct Plateau{
+
+    Tuile chevalet;
+    // je teste
+    //int taille_combinaison;
+
+
+}Plateau;
 
 #endif
 
