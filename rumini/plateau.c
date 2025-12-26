@@ -7,7 +7,6 @@
 
 
 void deposer_tuile(Tuile t, Joueur j  ){
-
     
 
 }
