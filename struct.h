@@ -41,7 +41,7 @@ typedef struct Plateau{
     //int taille_combinaison;
 
 
-    // teste
+    // si il y'a un teste teste
 
 
 }Plateau;
