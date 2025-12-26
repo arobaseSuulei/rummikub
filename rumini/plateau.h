@@ -8,7 +8,9 @@
 
 
 
-//void deposer_tuile(Tuile );
+void deposer_tuile(Tuile );
+
+void affiche_plateau(Tuile );
 
 
 

@@ -2,19 +2,12 @@
 #include <stdbool.h>
 #ifndef JOUEUR_H
 #define JOUEUR_H
+#include "struct.h"
 
-typedef struct Joueur{
+#include "struct.h"
 
-    int pseudo;
-    int estIa;
+Joueur * joueur_create(int *nb);
+int nbr_joueur(int n);
 
-
-
-
-
-
-}Joueur;
-
-Joueur joueur_create(int nom,int type);
 
 #endif
