@@ -38,8 +38,10 @@ typedef struct Tuile{
 typedef struct Plateau{
 
     Tuile chevalet;
-    // je teste
     //int taille_combinaison;
+
+
+    // teste
 
 
 }Plateau;
