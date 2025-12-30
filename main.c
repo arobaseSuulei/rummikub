@@ -22,7 +22,6 @@ int main(){
   afficher_tuiles(t,nb_tuiles);
 
 
-
     
     // Crée le tableau dynamiquement
     Joueur *players = joueur_create(&nb_joueurs);
