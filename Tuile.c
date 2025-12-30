@@ -10,7 +10,7 @@ void initialiser_tuile(Tuile t[],int *nb_tuiles){
     int val,coul;
 
 
-    for(int exemplaire=0;exemplaire<2;exemplaire++){
+    for(int exemplaire=0;exemplaire<2;exemplaire++) {
         for(int valeur=0;valeur<=13;valeur++){
             for(int couleur=0;couleur<=3;couleur++){
 
