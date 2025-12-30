@@ -19,7 +19,8 @@ int main(){
   int nb_joueurs;
 
   initialiser_tuile(t,&nb_tuiles); 
-  afficher_tuiles(t,nb_tuiles);
+  //afficher_tuiles(t,nb_tuiles);
+  stocker_tuile(t, nb_tuiles);
 
 
 

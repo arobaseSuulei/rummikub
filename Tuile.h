@@ -10,5 +10,6 @@
 
 void initialiser_tuile(Tuile t[],int *nb_tuiles);
 void afficher_tuiles(Tuile t[],int nb_tuiles);
+void stocker_tuile(Tuile t[], int nb_tuiles);
 
 #endif

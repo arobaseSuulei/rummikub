@@ -35,6 +35,24 @@ void initialiser_tuile(Tuile t[],int *nb_tuiles){
 }
 
 
+void stocker_tuile(Tuile t[], int nb_tuiles){
+    FILE *pioche=fopen("paquet.txt","w");
+
+    const char *couleurs[] = {"J", "R", "N", "B"};
+    
+    for(int i = 0; i < nb_tuiles; i++){
+        fprintf(pioche,"%d[%s%d]\n ", i,couleurs[t[i].couleur], t[i].valeur);
+        //
+    }
+    printf("\n");
+
+    fclose(pioche);
+
+
+}
+
+
+
 
 
 void afficher_tuiles(Tuile t[], int nb_tuiles){
