@@ -1,45 +1,38 @@
-
 #include <stdio.h>
-//#include "struct.h"
+#include <stdlib.h>
 #include "Tuile.h"
-#include <stdlib.h> 
 #include "joueur.h"
-
-
-
 
 int main(){
 
-     
+    Tuile t[106];
+    int nb_tuiles;
 
-  Tuile t[104];
-  int nb_tuiles;
+    int nb_joueurs;
 
-  
-  int nb_joueurs;
+    // Initialiser le paquet
+    initialiser_tuile(t, &nb_tuiles);
 
-  initialiser_tuile(t,&nb_tuiles); 
-  //afficher_tuiles(t,nb_tuiles);
-  stocker_tuile(t, nb_tuiles);
+    // Sauvegarder paquet.json si inexistant
+    stocker_tuile(t, nb_tuiles, "paquet.json");
 
+    // Créer pioche.json mélangé
+    creer_pioche();
 
-
-    
-    // Crée le tableau dynamiquement
+    // Crée le tableau dynamique de joueurs
     Joueur *players = joueur_create(&nb_joueurs);
-    
-    // Maintenant tu as :
-    // - players : ton tableau de joueurs
-    // - nb_joueurs : le nombre exact de joueurs
-    
+
+    if(players == NULL){
+        fprintf(stderr, "Erreur allocation joueurs\n");
+        return 1;
+    }
+
+    // Afficher pseudos
     printf("\nVous avez %d joueurs:\n", nb_joueurs);
     for(int i = 0; i < nb_joueurs; i++){
-        printf("- %s\n", players[i].pseudo);
+        printf("- %22s\n", players[i].pseudo);
     }
-    
-    // Libère la mémoire
-    free(players);
-    
 
+    free(players);
     return 0;
 }

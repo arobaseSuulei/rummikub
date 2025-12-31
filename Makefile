@@ -1,3 +1,3 @@
 all:
-	gcc main.c joueur.c -o main
+	gcc main.c joueur.c Tuile.c -o main
 	./main

@@ -3,8 +3,6 @@
 #include "struct.h"
 #include <stdlib.h>
 
-
-
 int nbr_joueur(){
 
     int n;
