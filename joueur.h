@@ -12,7 +12,7 @@
 
 Joueur * joueur_create(int *nb);
 int nbr_joueur(int n);
-
+void distribuer_tuile(Joueur *j);
 
 
 

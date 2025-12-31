@@ -30,7 +30,8 @@ int main(){
     // Afficher pseudos
     printf("\nVous avez %d joueurs:\n", nb_joueurs);
     for(int i = 0; i < nb_joueurs; i++){
-        printf("- %22s\n", players[i].pseudo);
+        printf("- %22s - ", players[i].pseudo);
+        printf("fichier est : %s\n", players[i].chevalet);
     }
 
     free(players);

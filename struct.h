@@ -13,14 +13,20 @@ typedef struct Tuile{
 typedef struct Joueur{
     char pseudo[23];  // max 22 caractères + '\0'
     int estIa;        // 0 = humain, 1 = IA
+    char chevalet[50];
 } Joueur;
 
-typedef struct Plateau{
-    Tuile chevalet;
+
+
+
+//typedef struct Plateau{
+    //Tuile chevalet;
     //int taille_combinaison;
 
     // si il y'a un teste teste
-}Plateau;
+//}Plateau;
+
+
 
 #endif
 
