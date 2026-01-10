@@ -3,12 +3,12 @@
 
 #ifndef TUILE_H
 #define TUILE_H
+#define MAX_TUILES 106
 
 #include "struct.h"
 
-void initialiser_tuile(Tuile t[], int *nb_tuiles);
-void stocker_tuile(Tuile t[], int nb_tuiles, const char *filename);
-void melanger_tuiles(Tuile t[], int nb_tuiles);
+Tuile* initialiser_tuile();
+Tuile* melanger_tuiles();
 void creer_pioche();
 
 #endif

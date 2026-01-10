@@ -7,12 +7,9 @@
 
 #include "struct.h"
 
-
-
-
-Joueur * joueur_create(int *nb);
-int nbr_joueur(int n);
-void distribuer_tuile(Joueur *j);
+Joueur* creer_joueur(int* nb_joueurs);
+int nbr_joueur();
+void distribuer_tuile();
 
 
 
