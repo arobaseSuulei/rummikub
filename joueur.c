@@ -4,6 +4,7 @@
 #include "Tuile.h"
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 //fonction qui demande et renvoie le nbr de joueurs
 int nbr_joueur(){
@@ -14,9 +15,21 @@ int nbr_joueur(){
 }
 
 
+// Mélange la liste des joueurs (Fisher-Yates) et renvoie le même pointeur
+Joueur* ordre_joueur(Joueur* players, int nb_joueurs) {
+    srand(time(NULL));
+    for (int i = nb_joueurs - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        Joueur tmp = players[i];
+        players[i] = players[j];
+        players[j] = tmp;
+    }
+    return players;
+}
+
+
 // création du joueur
 Joueur* creer_joueur(int* nb_joueurs){
-    char filename[50];
     int nb = nbr_joueur();
     *nb_joueurs = nb;
 
@@ -26,13 +39,22 @@ Joueur* creer_joueur(int* nb_joueurs){
         exit(1);
     }
 
+    // Entrer les pseudos
     for (int i = 0; i < nb; i++){
         printf("Joueur %d: ", i+1);
-        scanf("%49s", players[i].pseudo); // limite à 49 caractères
+        scanf("%49s", players[i].pseudo);
+    }
 
-        sprintf(filename,"joueur%d.json",i);
+    //  Mélanger les joueurs pour déterminer l'ordre
+    ordre_joueur(players, nb);
+
+    // Créer les fichiers selon l'ordre mélangé
+    for (int i = 0; i < nb; i++){
+        char filename[50];
+        sprintf(filename,"%d.json", i+1);
+
         FILE *f = fopen(filename,"w");
-        fprintf(f, "{ \"pseudo\": \"%s\" }\n", players[i].pseudo);
+        fprintf(f, "{\n  \"pseudo\": \"%s\",\n  \"tuiles\": []\n}\n", players[i].pseudo);
         fclose(f);
 
         strcpy(players[i].chevalet, filename);
@@ -40,6 +62,7 @@ Joueur* creer_joueur(int* nb_joueurs){
 
     return players;
 }
+
 
 
 /*-------------------------------------------------------------------------------------------------- */
@@ -62,28 +85,20 @@ void distribuer_tuile() {
     char ligne[200];
 
     while (fgets(ligne, sizeof(ligne), fpioche) && index < MAX_TUILES) {
-        // ignorer crochets ou lignes vides
         if (strchr(ligne, '{') == NULL) continue;
 
         int valeur;
         char couleur;
         bool joker;
 
-        // parser manuellement la ligne
         if (sscanf(ligne, " {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%5s}", 
                    &valeur, &couleur, ligne) == 3) {
-            // enlever la virgule ou le \n
             char* p = strchr(ligne, ',');
             if (p) *p = '\0';
             p = strchr(ligne, '\n');
             if (p) *p = '\0';
 
-            // détecter joker
-            if (strncmp(ligne, "true", 4) == 0)
-                joker = true;
-            else
-                joker = false;
-
+            joker = (strncmp(ligne, "true", 4) == 0);
             pioche[index++] = (Tuile){valeur, couleur, joker};
         }
     }
@@ -105,14 +120,16 @@ void distribuer_tuile() {
             continue;
         }
 
-        fprintf(fjoueur, "[\n");
+        // écrire pseudo et tuiles (pas d'indice)
+        fprintf(fjoueur, "{\n  \"pseudo\": \"%s\",\n  \"tuiles\": [\n", 
+                players[i].pseudo);
         for (int j = 0; j < tuiles_par_joueur; j++) {
             Tuile t = pioche[pioche_index++];
-            fprintf(fjoueur, "  {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
+            fprintf(fjoueur, "    {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
                     t.valeur, t.couleur, t.joker ? "true" : "false",
                     (j < tuiles_par_joueur - 1) ? "," : "");
         }
-        fprintf(fjoueur, "]\n");
+        fprintf(fjoueur, "  ]\n}\n");
         fclose(fjoueur);
     }
 
