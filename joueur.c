@@ -162,15 +162,17 @@ void piocher_tuile(Joueur j) {
     Tuile pioche[MAX_TUILES], tuiles_joueur[MAX_TUILES];
     int np = 0, nj = 0;
     char ligne[256];
+    char pseudo[23];
+    int tour = 0;
 
     /* --- lire pioche --- */
     FILE* f = fopen("pioche.json", "r");
     if (!f) return;
 
     while (fgets(ligne, sizeof(ligne), f))
-        if (sscanf(ligne,
-            " {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
-            &pioche[np].valeur, &pioche[np].couleur) >= 2) {
+        if (strchr(ligne, '{')) {
+            sscanf(ligne, " {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
+                   &pioche[np].valeur, &pioche[np].couleur);
             pioche[np].joker = strstr(ligne, "true") != NULL;
             np++;
         }
@@ -179,48 +181,52 @@ void piocher_tuile(Joueur j) {
 
     Tuile t = pioche[0];
 
-    /* --- réécrire pioche sans la première --- */
+    /* --- réécrire pioche sans la première tuile --- */
     f = fopen("pioche.json", "w");
     fprintf(f, "[\n");
     for (int i = 1; i < np; i++)
-        fprintf(f,
-            "  {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-            pioche[i].valeur, pioche[i].couleur,
-            pioche[i].joker ? "true" : "false",
-            (i < np - 1) ? "," : "");
+        fprintf(f, "  {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
+                pioche[i].valeur, pioche[i].couleur,
+                pioche[i].joker ? "true" : "false",
+                (i < np - 1) ? "," : "");
     fprintf(f, "]\n");
     fclose(f);
 
-    /* --- lire tuiles joueur --- */
+    /* --- lire joueur existant --- */
     FILE* fj = fopen(j.chevalet, "r");
     if (!fj) return;
 
-    while (fgets(ligne, sizeof(ligne), fj))
-        if (sscanf(ligne,
-            " {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
-            &tuiles_joueur[nj].valeur, &tuiles_joueur[nj].couleur) >= 2) {
+    while (fgets(ligne, sizeof(ligne), fj)) {
+        if (sscanf(ligne, " \"pseudo\": \"%22[^\"]\"", pseudo) == 1) continue;
+        if (strstr(ligne, "\"tour\": true")) tour = 1;
+        else if (strstr(ligne, "\"tour\": false")) tour = 0;
+        if (strchr(ligne, '{') && strstr(ligne, "valeur")) {
+            sscanf(ligne, " {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
+                   &tuiles_joueur[nj].valeur, &tuiles_joueur[nj].couleur);
             tuiles_joueur[nj].joker = strstr(ligne, "true") != NULL;
             nj++;
         }
+    }
     fclose(fj);
 
     tuiles_joueur[nj++] = t;
 
-    /* --- réécrire joueur --- */
+    /* --- réécrire joueur avec pseudo et tour préservés --- */
     fj = fopen(j.chevalet, "w");
     fprintf(fj,
-        "{\n  \"pseudo\":\"%s\",\n  \"tour\":%s,\n  \"tuiles\":[\n",
-        j.pseudo, j.tour ? "true" : "false");
+            "{\n  \"pseudo\":\"%s\",\n  \"tour\":%s,\n  \"tuiles\":[\n",
+            pseudo, tour ? "true" : "false");
 
     for (int i = 0; i < nj; i++)
         fprintf(fj,
-            "    {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-            tuiles_joueur[i].valeur,
-            tuiles_joueur[i].couleur,
-            tuiles_joueur[i].joker ? "true" : "false",
-            (i < nj - 1) ? "," : "");
+                "    {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
+                tuiles_joueur[i].valeur,
+                tuiles_joueur[i].couleur,
+                tuiles_joueur[i].joker ? "true" : "false",
+                (i < nj - 1) ? "," : "");
 
     fprintf(fj, "  ]\n}\n");
     fclose(fj);
 }
+
 /*------------------------------------------------------------------------------------------------------------------------------------- */
