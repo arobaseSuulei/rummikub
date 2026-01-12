@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "struct.h"
 #include "Tuile.h"
+#include "joueur.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -65,123 +66,58 @@ Joueur* creer_joueur(int* nb_joueurs){
 }
 
 
-/*------------------------------------------------------------------------------------------------------------------------------------- */
+/*-------------------------------------------------------------*/
 void distribuer_tuile() {
     int nb_joueurs;
-    Joueur* players = creer_joueur(&nb_joueurs); // nb_joueurs rempli ici
+    Joueur* players = creer_joueur(&nb_joueurs);
     if (!players) return;
 
-    // ouvrir pioche.json
-    FILE* fpioche = fopen("pioche.json", "r");
-    if (!fpioche) {
-        perror("Erreur ouverture pioche.json");
-        free(players);
-        return;
-    }
-
-    // lire toutes les tuiles de pioche.json
-    Tuile pioche[MAX_TUILES];
-    int index = 0;
-    char ligne[200];
-
-    while (fgets(ligne, sizeof(ligne), fpioche) && index < MAX_TUILES) {
-        if (strchr(ligne, '{') == NULL) continue;
-
-        int valeur;
-        char couleur;
-        bool joker;
-
-        if (sscanf(ligne, " {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%5s}", 
-                   &valeur, &couleur, ligne) == 3) {
-            char* p = strchr(ligne, ',');
-            if (p) *p = '\0';
-            p = strchr(ligne, '\n');
-            if (p) *p = '\0';
-
-            joker = (strncmp(ligne, "true", 4) == 0);
-            pioche[index++] = (Tuile){valeur, couleur, joker};
-        }
-    }
-    fclose(fpioche);
-
-    int tuiles_par_joueur = 14;
-    int pioche_index = 0;
-
-    // distribuer les tuiles à chaque joueur
-    for (int i = 0; i < nb_joueurs; i++) {
-        if (pioche_index + tuiles_par_joueur > index) {
-            printf("Pas assez de tuiles dans la pioche pour tous les joueurs!\n");
-            break;
-        }
-
-        FILE* fjoueur = fopen(players[i].chevalet, "w");
-        if (!fjoueur) {
-            perror("Erreur ouverture fichier joueur");
+    // créer fichiers joueurs avec pseudo et tour
+    for (int j = 0; j < nb_joueurs; j++) {
+        FILE* fj = fopen(players[j].chevalet, "w");
+        if (!fj) {
+            perror("Erreur création fichier joueur");
             continue;
         }
-
-        // écrire pseudo, tuiles et tour
-        fprintf(fjoueur, "{\n  \"pseudo\": \"%s\",\n  \"tour\": %s,\n  \"tuiles\": [\n", 
-                players[i].pseudo, (i == 0) ? "true" : "false");
-
-        for (int j = 0; j < tuiles_par_joueur; j++) {
-            Tuile t = pioche[pioche_index++];
-            fprintf(fjoueur, "    {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-                    t.valeur, t.couleur, t.joker ? "true" : "false",
-                    (j < tuiles_par_joueur - 1) ? "," : "");
-        }
-
-        fprintf(fjoueur, "  ]\n}\n");
-        fclose(fjoueur);
+        fprintf(fj, "{\n  \"pseudo\": \"%s\",\n  \"tour\": %s,\n  \"tuiles\": []\n}\n",
+                players[j].pseudo, (j == 0) ? "true" : "false");
+        fclose(fj);
     }
 
-    // réécrire pioche.json avec les tuiles restantes
-    fpioche = fopen("pioche.json", "w");
-    if (!fpioche) {
-        perror("Erreur réécriture pioche.json");
-        free(players);
-        return;
-    }
-
-    fprintf(fpioche, "[\n");
-    for (int i = pioche_index; i < index; i++) {
-        fprintf(fpioche, "  {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-                pioche[i].valeur,
-                pioche[i].couleur,
-                pioche[i].joker ? "true" : "false",
-                (i < index - 1) ? "," : "");
-    }
-    fprintf(fpioche, "]\n");
-    fclose(fpioche);
+    // distribuer 14 tuiles à chaque joueur
+    for (int i = 0; i < 14; i++)
+        for (int j = 0; j < nb_joueurs; j++)
+            piocher_tuile(players[j]);
 
     free(players);
 }
 
-/*------------------------------------------------------------------------------------------------------------------------------------- */
+/*-------------------------------------------------------------*/
 void piocher_tuile(Joueur j) {
     Tuile pioche[MAX_TUILES], tuiles_joueur[MAX_TUILES];
     int np = 0, nj = 0;
     char ligne[256];
-    char pseudo[23];
+    char pseudo[50];
     int tour = 0;
 
-    /* --- lire pioche --- */
+    // --- lire pioche ---
     FILE* f = fopen("pioche.json", "r");
     if (!f) return;
 
-    while (fgets(ligne, sizeof(ligne), f))
+    while (fgets(ligne, sizeof(ligne), f)) {
         if (strchr(ligne, '{')) {
             sscanf(ligne, " {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
                    &pioche[np].valeur, &pioche[np].couleur);
             pioche[np].joker = strstr(ligne, "true") != NULL;
             np++;
         }
+    }
     fclose(f);
     if (np == 0) return;
 
     Tuile t = pioche[0];
 
-    /* --- réécrire pioche sans la première tuile --- */
+    // --- réécrire pioche sans la première tuile ---
     f = fopen("pioche.json", "w");
     fprintf(f, "[\n");
     for (int i = 1; i < np; i++)
@@ -192,12 +128,14 @@ void piocher_tuile(Joueur j) {
     fprintf(f, "]\n");
     fclose(f);
 
-    /* --- lire joueur existant --- */
+    // --- lire joueur existant ---
     FILE* fj = fopen(j.chevalet, "r");
     if (!fj) return;
 
+    // lire pseudo, tour, tuiles existantes
+    nj = 0;
     while (fgets(ligne, sizeof(ligne), fj)) {
-        if (sscanf(ligne, " \"pseudo\": \"%22[^\"]\"", pseudo) == 1) continue;
+        if (sscanf(ligne, " \"pseudo\": \"%49[^\"]\"", pseudo) == 1) continue;
         if (strstr(ligne, "\"tour\": true")) tour = 1;
         else if (strstr(ligne, "\"tour\": false")) tour = 0;
         if (strchr(ligne, '{') && strstr(ligne, "valeur")) {
@@ -209,24 +147,19 @@ void piocher_tuile(Joueur j) {
     }
     fclose(fj);
 
+    // ajouter la nouvelle tuile
     tuiles_joueur[nj++] = t;
 
-    /* --- réécrire joueur avec pseudo et tour préservés --- */
+    // --- réécrire joueur proprement ---
     fj = fopen(j.chevalet, "w");
-    fprintf(fj,
-            "{\n  \"pseudo\":\"%s\",\n  \"tour\":%s,\n  \"tuiles\":[\n",
+    fprintf(fj, "{\n  \"pseudo\": \"%s\",\n  \"tour\": %s,\n  \"tuiles\": [\n",
             pseudo, tour ? "true" : "false");
-
     for (int i = 0; i < nj; i++)
-        fprintf(fj,
-                "    {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
+        fprintf(fj, "    {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
                 tuiles_joueur[i].valeur,
                 tuiles_joueur[i].couleur,
                 tuiles_joueur[i].joker ? "true" : "false",
                 (i < nj - 1) ? "," : "");
-
     fprintf(fj, "  ]\n}\n");
     fclose(fj);
 }
-
-/*------------------------------------------------------------------------------------------------------------------------------------- */
