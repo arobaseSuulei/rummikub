@@ -1,19 +1,20 @@
 {
-  "pseudo": "Bercine",
+  "pseudo": "b",
+  "tour": false,
   "tuiles": [
-    {"valeur":5,"couleur":"R","joker":false},
-    {"valeur":11,"couleur":"R","joker":false},
-    {"valeur":10,"couleur":"V","joker":false},
-    {"valeur":7,"couleur":"R","joker":false},
-    {"valeur":12,"couleur":"R","joker":false},
-    {"valeur":10,"couleur":"R","joker":false},
-    {"valeur":4,"couleur":"R","joker":false},
-    {"valeur":5,"couleur":"R","joker":false},
-    {"valeur":12,"couleur":"B","joker":false},
-    {"valeur":7,"couleur":"V","joker":false},
-    {"valeur":1,"couleur":"R","joker":false},
-    {"valeur":2,"couleur":"R","joker":false},
     {"valeur":9,"couleur":"V","joker":false},
-    {"valeur":3,"couleur":"V","joker":false}
+    {"valeur":2,"couleur":"O","joker":false},
+    {"valeur":1,"couleur":"R","joker":false},
+    {"valeur":11,"couleur":"B","joker":false},
+    {"valeur":9,"couleur":"B","joker":false},
+    {"valeur":3,"couleur":"B","joker":false},
+    {"valeur":9,"couleur":"O","joker":false},
+    {"valeur":1,"couleur":"B","joker":false},
+    {"valeur":1,"couleur":"O","joker":false},
+    {"valeur":7,"couleur":"R","joker":false},
+    {"valeur":0,"couleur":"J","joker":true},
+    {"valeur":7,"couleur":"V","joker":false},
+    {"valeur":12,"couleur":"R","joker":false},
+    {"valeur":2,"couleur":"R","joker":false}
   ]
 }

@@ -6,7 +6,7 @@
 #include "struct.h"
 #include "Tuile.h"
 
-
+/*------------------------------------------------------------------------------------------------------------------------------------- */
 // créer le tableau de tuiles
 Tuile* initialiser_tuile() {
 
@@ -39,6 +39,7 @@ Tuile* initialiser_tuile() {
 }
 
 
+/*------------------------------------------------------------------------------------------------------------------------------------- */
 // Mélanger un tableau de tuiles (Fisher-Yates) en utilisant initialiser_tuile
 Tuile* melanger_tuiles() {
     // créer et récupérer le tableau
@@ -59,6 +60,7 @@ Tuile* melanger_tuiles() {
 }
 
 
+/*------------------------------------------------------------------------------------------------------------------------------------- */
 // Créer pioche.json mélangé
 void creer_pioche() {
     // créer et mélanger les tuiles
@@ -94,3 +96,5 @@ void creer_pioche() {
     fclose(f);
     free(t); // libération mémoire dynamique
 }
+
+/*----------------*/
