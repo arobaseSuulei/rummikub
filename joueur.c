@@ -66,7 +66,7 @@ Joueur* creer_joueur(int* nb_joueurs){
 }
 
 
-/*-------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------*/
 void distribuer_tuile() {
     int nb_joueurs;
     Joueur* players = creer_joueur(&nb_joueurs);
@@ -92,7 +92,7 @@ void distribuer_tuile() {
     free(players);
 }
 
-/*-------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------------------*/
 void piocher_tuile(Joueur j) {
     Tuile pioche[MAX_TUILES], tuiles_joueur[MAX_TUILES];
     int np = 0, nj = 0;
@@ -162,4 +162,121 @@ void piocher_tuile(Joueur j) {
                 (i < nj - 1) ? "," : "");
     fprintf(fj, "  ]\n}\n");
     fclose(fj);
+}
+/*------------------------------------------------------------------------------------------------------------*/
+void jouer_combinaison(Joueur j) {
+    Tuile tuiles_joueur[MAX_TUILES];
+    int nb_tuiles = 0;
+    char ligne[256];
+
+    // --- Lire le chevalet du joueur ---
+    FILE* fj = fopen(j.chevalet, "r");
+    if (!fj) {
+        perror("Impossible d'ouvrir le fichier du joueur");
+        return;
+    }
+
+    while (fgets(ligne, sizeof(ligne), fj)) {
+        if (strchr(ligne, '{') && strstr(ligne, "valeur")) {
+            sscanf(ligne, " {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
+                   &tuiles_joueur[nb_tuiles].valeur,
+                   &tuiles_joueur[nb_tuiles].couleur);
+            tuiles_joueur[nb_tuiles].joker = strstr(ligne, "true") != NULL;
+            nb_tuiles++;
+        }
+    }
+    fclose(fj);
+
+    // --- Afficher les tuiles ---
+    printf("Vos tuiles :\n");
+    for (int i = 0; i < nb_tuiles; i++) {
+        printf("%d: %d%c%s\n", i + 1,
+               tuiles_joueur[i].valeur,
+               tuiles_joueur[i].couleur,
+               tuiles_joueur[i].joker ? " (J)" : "");
+    }
+
+    char rep;
+    do {
+        // --- Demander la combinaison ---
+        int indices[MAX_TUILES];
+        int nb_comb = 0;
+
+        while (true) {
+            printf("Entrez les numeros de tuiles à poser (min 3), séparés par des espaces :\n");
+
+            if (!fgets(ligne, sizeof(ligne), stdin)) continue;
+            nb_comb = 0;
+
+            char* tok = strtok(ligne, " \n");
+            while (tok && nb_comb < MAX_TUILES) {
+                int idx = atoi(tok) - 1;
+                if (idx >= 0 && idx < nb_tuiles) {
+                    indices[nb_comb++] = idx;
+                }
+                tok = strtok(NULL, " \n");
+            }
+
+            if (nb_comb >= 3) break;
+            printf("Une combinaison doit comporter au moins 3 tuiles.\n");
+        }
+
+        // --- Lire table.json ---
+        FILE* ft = fopen("table.json", "r");
+        int empty_table = 0;
+        if (!ft) {
+            ft = fopen("table.json", "w");
+            fprintf(ft, "[\n]\n");
+            fclose(ft);
+            ft = fopen("table.json", "r");
+        }
+        fseek(ft, 0, SEEK_END);
+        long size = ftell(ft);
+        empty_table = (size <= 4); // fichier vide : []\n
+        fclose(ft);
+
+        // --- Ajouter la combinaison ---
+        ft = fopen("table.json", "r+");
+        fseek(ft, 0, SEEK_END);
+        if (!empty_table) {
+            fseek(ft, -2, SEEK_END); // avant le \n]
+            fprintf(ft, ",\n");
+        } else {
+            fseek(ft, -2, SEEK_END);
+        }
+
+        fprintf(ft, "  [\n");
+        for (int i = 0; i < nb_comb; i++) {
+            Tuile t = tuiles_joueur[indices[i]];
+            fprintf(ft, "    {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
+                    t.valeur, t.couleur, t.joker ? "true" : "false",
+                    (i < nb_comb - 1) ? "," : "");
+        }
+        fprintf(ft, "  ]\n]\n");
+        fclose(ft);
+
+        // --- Supprimer les tuiles posées ---
+        FILE* fjw = fopen(j.chevalet, "w");
+        fprintf(fjw, "{\n  \"pseudo\":\"%s\",\n  \"tour\":%s,\n  \"tuiles\":[\n",
+                j.pseudo, j.tour ? "true" : "false");
+
+        int written = 0;
+        for (int i = 0; i < nb_tuiles; i++) {
+            int keep = 1;
+            for (int k = 0; k < nb_comb; k++) if (i == indices[k]) keep = 0;
+            if (keep) {
+                if (written++) fprintf(fjw, ",\n");
+                Tuile t = tuiles_joueur[i];
+                fprintf(fjw, "    {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}",
+                        t.valeur, t.couleur, t.joker ? "true" : "false");
+            }
+        }
+        fprintf(fjw, "\n  ]\n}\n");
+        fclose(fjw);
+
+        printf("Combinaison ajoutée à la table.\n");
+        printf("Voulez-vous poser une autre combinaison ? (y/n) ");
+        scanf(" %c", &rep);
+        getchar(); // consommer le \n
+    } while (rep == 'y' || rep == 'Y');
 }

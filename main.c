@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Tuile.h"
+#include "table.h"
 #include "joueur.h"
 
 int main(void) {
@@ -13,6 +14,8 @@ int main(void) {
     strcpy(j.chevalet, "1.json");  // tester sur le joueur 1
 
     piocher_tuile(j);        // pioche 1 tuile → ajoutée à 1.json
+    creer_table();
+    jouer_combinaison(j);
 
     return 0;
 }
