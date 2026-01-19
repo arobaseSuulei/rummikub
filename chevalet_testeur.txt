@@ -1,0 +1,28 @@
+{
+  "pseudo": "testeur",
+  "tour": true,
+  "tuiles": [
+    {"valeur":8,"couleur":"R","joker":false},
+    {"valeur":8,"couleur":"B","joker":false},
+    {"valeur":8,"couleur":"V","joker":false},
+    {"valeur":3,"couleur":"R","joker":false},
+    {"valeur":4,"couleur":"R","joker":false},
+    {"valeur":5,"couleur":"R","joker":false},
+    {"valeur":6,"couleur":"B","joker":false},
+    {"valeur":0,"couleur":"J","joker":true},
+    {"valeur":8,"couleur":"B","joker":false},
+    {"valeur":0,"couleur":"J","joker":true},
+    {"valeur":10,"couleur":"V","joker":false},
+    {"valeur":11,"couleur":"V","joker":false},
+    {"valeur":11,"couleur":"O","joker":false},
+    {"valeur":12,"couleur":"O","joker":false},
+    {"valeur":0,"couleur":"J","joker":true},
+    {"valeur":5,"couleur":"R","joker":false},
+    {"valeur":5,"couleur":"B","joker":false},
+    {"valeur":0,"couleur":"J","joker":true},
+    {"valeur":9,"couleur":"R","joker":false},
+    {"valeur":9,"couleur":"R","joker":false},
+    {"valeur":1,"couleur":"V","joker":false},
+    {"valeur":13,"couleur":"B","joker":false}
+  ]
+}
