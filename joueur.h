@@ -6,15 +6,24 @@
 
 #include "struct.h"
 
+// Gestion joueurs
 Joueur* creer_joueur(int* nb_joueurs);
 Joueur* ordre_joueur(Joueur* players, int nb_joueurs);
 int nbr_joueur();
-void distribuer_tuile();
+
+// Gestion tuiles
+void distribuer_tuile(void);
 void piocher_tuile(Joueur j);
+
+// Combinaisons
 bool combinaison_valide(Tuile* comb, int n);
 void jouer_combinaison(Joueur j);
 
-
+// Utilitaires affichage / fichier
+void afficher_tuiles(Tuile tuiles[], int nb_tuiles);
+void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles);
+void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles);
+void ajouter_a_table(Tuile* comb, int n);
 
 
 #endif

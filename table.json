@@ -1,2 +1,32 @@
 [
+  [
+    {"valeur":13,"couleur":"V","joker":false},
+    {"valeur":13,"couleur":"B","joker":false},
+    {"valeur":13,"couleur":"R","joker":false}
+  ]
+,
+  [
+    {"valeur":1,"couleur":"R","joker":false},
+    {"valeur":2,"couleur":"R","joker":false},
+    {"valeur":3,"couleur":"R","joker":false}
+  ]
+,
+  [
+    {"valeur":10,"couleur":"V","joker":false},
+    {"valeur":11,"couleur":"V","joker":false},
+    {"valeur":12,"couleur":"V","joker":false},
+    {"valeur":13,"couleur":"V","joker":false}
+  ]
+,
+  [
+    {"valeur":7,"couleur":"B","joker":false},
+    {"valeur":7,"couleur":"O","joker":false},
+    {"valeur":7,"couleur":"V","joker":false}
+  ]
+,
+  [
+    {"valeur":4,"couleur":"R","joker":false},
+    {"valeur":5,"couleur":"R","joker":false},
+    {"valeur":0,"couleur":"J","joker":true}
+  ]
 ]
