@@ -49,6 +49,7 @@ Joueur* creer_joueur(int* nb_joueurs){
     for (int i = 0; i < nb; i++){
         printf("Joueur %d: ", i+1);
         scanf("%49s", players[i].pseudo);
+        getchar();  // <- consommer le '\n' restant
     }
 
     //  Mélanger les joueurs pour déterminer l'ordre
@@ -64,7 +65,6 @@ Joueur* creer_joueur(int* nb_joueurs){
 
     return players;
 }
-
 
 /*---------------------------------------------------------------------------------------------------------*/
 void distribuer_tuile() {
@@ -176,7 +176,7 @@ void piocher_tuile(Joueur j) {
     fclose(fj);
 }
 
-/*------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------------------------------------*/
 bool combinaison_valide(Tuile* tuiles, int nb) {
     if (nb < 3) return false; // minimum 3 tuiles
 
@@ -241,8 +241,43 @@ bool combinaison_valide(Tuile* tuiles, int nb) {
 
     return (gaps <= jokers); // les jokers comblent les trous
 }
+/*-------------------------------------------------------------------------------------------------------------------------------------*/
+bool combinaison_valide_30(Tuile* tuiles, int nb) {
+    if (!combinaison_valide(tuiles, nb))
+        return false; // la validité générale est déjà vérifiée
 
-/*------------------------------------------------------------------------------------------------------------*/
+    int somme = 0;
+    int jokers = 0;
+    int min_val = 100, max_val = 0;
+
+    // Calculer la somme des tuiles normales et trouver min/max
+    for (int i = 0; i < nb; i++) {
+        if (tuiles[i].joker) {
+            jokers++;
+        } else {
+            somme += tuiles[i].valeur;
+            if (tuiles[i].valeur < min_val) min_val = tuiles[i].valeur;
+            if (tuiles[i].valeur > max_val) max_val = tuiles[i].valeur;
+        }
+    }
+
+    // Ajouter les jokers
+    if (jokers > 0) {
+        // Estimer chaque Joker à la valeur max de la combinaison pour la somme
+        somme += jokers * max_val;
+    }
+
+    if (somme < 30) {
+        printf("Erreur : la somme de la combinaison est %d (<30 points requis pour le premier tour).\n", somme);
+        return false;
+    }
+
+    return true;
+}
+
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------*/
 
 void afficher_tuiles(Tuile tuiles[], int nb_tuiles) {
     printf("Vos tuiles :\n");
@@ -255,7 +290,7 @@ void afficher_tuiles(Tuile tuiles[], int nb_tuiles) {
     }
 }
 
-/*------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------------------*/
 
 void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles) {
     char ligne[256];
@@ -281,7 +316,7 @@ void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles) {
     fclose(f);
 }
 
-/*------------------------------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------------------------------------------------------------*/
 void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles) {
     FILE* f = fopen(fichier, "w");
 
@@ -302,7 +337,7 @@ void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_
     fclose(f);
 }
 
-/*------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------------------------------------*/
 void ajouter_a_table(Tuile* comb, int n) {
     FILE* ft = fopen("table.json", "r+");
     if (!ft) {
@@ -329,73 +364,145 @@ void ajouter_a_table(Tuile* comb, int n) {
     fprintf(ft, "  ]\n]\n");
     fclose(ft);
 }
-/*-------------------------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------------------------------------------------------------*/
+bool est_premier_tour(Joueur j) {
+    FILE* f = fopen(j.chevalet, "r");
+    if (!f) return true; // par défaut
+
+    char ligne[256];
+    bool premier_tour = true;
+
+    while (fgets(ligne, sizeof(ligne), f)) {
+        if (strstr(ligne, "\"premier_tour\": true")) {
+            premier_tour = true;
+            break;
+        }
+        if (strstr(ligne, "\"premier_tour\": false")) {
+            premier_tour = false;
+            break;
+        }
+    }
+
+    fclose(f);
+    return premier_tour;
+}
+
+
+
+/*---------------------------------------------------------------------------------------------------------------------------------------*/
 void jouer_combinaison(Joueur j) {
     Tuile tuiles_joueur[MAX_TUILES];
     int nb_tuiles = 0;
     char ligne[256];
     char rep;
 
-    do {
-        // --- Charger le chevalet actuel depuis le fichier ---
-        charger_chevalet(j.chevalet, tuiles_joueur, &nb_tuiles);
+    bool premier_tour = est_premier_tour(j);
 
-        // --- Afficher les tuiles disponibles ---
+    do {
+        // Charger le chevalet actuel
+        charger_chevalet(j.chevalet, tuiles_joueur, &nb_tuiles);
         afficher_tuiles(tuiles_joueur, nb_tuiles);
 
         int indices[MAX_TUILES], nb_comb = 0;
 
-        // --- Boucle tant que combinaison invalide ---
-        while (true) {
+        if (premier_tour)
+            printf("Premier tour : vous devez poser une combinaison d'au moins 30 points.\n");
+        else
             printf("Entrez les numeros de tuiles à poser (min 3), séparés par des espaces :\n");
-            if (!fgets(ligne, sizeof(ligne), stdin)) continue;
-            nb_comb = 0;
 
-            char* tok = strtok(ligne, " \n");
-            while (tok && nb_comb < MAX_TUILES) {
-                int idx = atoi(tok) - 1;
-                if (idx >= 0 && idx < nb_tuiles) indices[nb_comb++] = idx;
-                tok = strtok(NULL, " \n");
-            }
+        if (!fgets(ligne, sizeof(ligne), stdin)) return;
 
-            if (nb_comb < 3) {
-                printf("Une combinaison doit comporter au moins 3 tuiles.\n");
-                continue;
-            }
-
-            Tuile comb[MAX_TUILES];
-            for (int i = 0; i < nb_comb; i++) comb[i] = tuiles_joueur[indices[i]];
-
-            if (!combinaison_valide(comb, nb_comb)) {
-                printf("Combinaison invalide selon les règles du Rummikub.\n");
-                continue;
-            }
-
-            // --- Ajouter la combinaison à la table ---
-            ajouter_a_table(comb, nb_comb);
-
-            // --- Supprimer les tuiles posées et sauvegarder le chevalet ---
-            int nb_restantes = 0;
-            Tuile restantes[MAX_TUILES];
-            for (int i = 0; i < nb_tuiles; i++) {
-                int keep = 1;
-                for (int k = 0; k < nb_comb; k++)
-                    if (i == indices[k]) keep = 0;
-                if (keep) restantes[nb_restantes++] = tuiles_joueur[i];
-            }
-            sauvegarder_chevalet(j.chevalet, j, restantes, nb_restantes);
-
-            printf("Combinaison ajoutée à la table.\n");
-
-            // --- Réafficher le chevalet mis à jour ---
-            charger_chevalet(j.chevalet, tuiles_joueur, &nb_tuiles);
-            afficher_tuiles(tuiles_joueur, nb_tuiles);
-
-            break; // combinaison valide posée
+        // Récupérer les indices choisis
+        char* tok = strtok(ligne, " \n");
+        while (tok && nb_comb < MAX_TUILES) {
+            int idx = atoi(tok) - 1;
+            if (idx >= 0 && idx < nb_tuiles)
+                indices[nb_comb++] = idx;
+            tok = strtok(NULL, " \n");
         }
 
-        printf("Voulez-vous poser une autre combinaison ? (y/n) ");
-        scanf(" %c", &rep);
-        getchar(); // consommer le \n
+        if (nb_comb < 3) {
+            printf("Une combinaison doit comporter au moins 3 tuiles.\n");
+        }
+
+        // Construire la combinaison choisie
+        Tuile comb[MAX_TUILES];
+        for (int i = 0; i < nb_comb; i++)
+            comb[i] = tuiles_joueur[indices[i]];
+
+        // --- Premier tour : boucle jusqu'à réussite ou abandon ---
+        if (premier_tour) {
+            while (!combinaison_valide_30(comb, nb_comb)) {
+                printf("La combinaison n'est pas valide pour le premier tour (<30 points ou invalide).\n");
+                printf("Voulez-vous réessayer ? (y/n) ");
+                if (!fgets(ligne, sizeof(ligne), stdin)) return;
+                if (ligne[0] == 'n' || ligne[0] == 'N') {
+                    printf("Vous piochez une tuile.\n");
+                    piocher_tuile(j);
+                    return; // fin du tour
+                } else if (ligne[0] == 'y' || ligne[0] == 'Y') {
+                    // Refaire la saisie
+                    printf("Re-entrez les numeros de tuiles à poser :\n");
+                    if (!fgets(ligne, sizeof(ligne), stdin)) return;
+                    nb_comb = 0;
+                    tok = strtok(ligne, " \n");
+                    while (tok && nb_comb < MAX_TUILES) {
+                        int idx = atoi(tok) - 1;
+                        if (idx >= 0 && idx < nb_tuiles)
+                            indices[nb_comb++] = idx;
+                        tok = strtok(NULL, " \n");
+                    }
+                    if (nb_comb < 3) {
+                        printf("Une combinaison doit comporter au moins 3 tuiles.\n");
+                        continue;
+                    }
+                    for (int i = 0; i < nb_comb; i++)
+                        comb[i] = tuiles_joueur[indices[i]];
+                } else {
+                    printf("Réponse invalide. Tapez y ou n.\n");
+                }
+            }
+        } 
+        // --- Tours suivants ---
+        else {
+            if (!combinaison_valide(comb, nb_comb)) {
+                printf("Combinaison invalide.\n");
+                continue;
+            }
+        }
+
+        // Ajouter la combinaison à la table
+        ajouter_a_table(comb, nb_comb);
+
+        // Supprimer les tuiles posées du chevalet
+        Tuile restantes[MAX_TUILES];
+        int nb_restantes = 0;
+        for (int i = 0; i < nb_tuiles; i++) {
+            bool garder = true;
+            for (int k = 0; k < nb_comb; k++)
+                if (i == indices[k]) garder = false;
+            if (garder) restantes[nb_restantes++] = tuiles_joueur[i];
+        }
+
+        sauvegarder_chevalet(j.chevalet, j, restantes, nb_restantes);
+
+        printf("Combinaison posée.\n");
+
+        // Demander si le joueur veut poser une autre combinaison
+        while (1) {
+            printf("Voulez-vous poser une autre combinaison ? (y/n) ");
+            if (!fgets(ligne, sizeof(ligne), stdin)) return;
+            if (ligne[0] == 'y' || ligne[0] == 'Y') {
+                rep = 'y';
+                break;
+            } else if (ligne[0] == 'n' || ligne[0] == 'N') {
+                rep = 'n';
+                break;
+            } else {
+                printf("Réponse invalide. Tapez y ou n.\n");
+            }
+        }
+
     } while (rep == 'y' || rep == 'Y');
 }
