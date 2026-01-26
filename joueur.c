@@ -163,3 +163,26 @@ void piocher_tuile(Joueur j) {
     fprintf(fj, "  ]\n}\n");
     fclose(fj);
 }
+
+
+// --- Affichage de la table pour les joueurs ---
+
+// --- Compter le nombre de tuiles a chaque fois ---
+int nbr_tuiles(const char* fichier_json) {
+    FILE* f = fopen(fichier_json, "r");
+    if (!f) return -1;
+    
+    int count = 0;
+    char ligne[256];
+    
+    while (fgets(ligne, sizeof(ligne), f)) {
+        // Compte chaque ligne qui contient "valeur" (= une tuile)
+        if (strstr(ligne, "\"valeur\"")) {
+            count++;
+        }
+    }
+    
+    fclose(f);
+    return count;
+}
+

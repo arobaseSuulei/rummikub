@@ -14,5 +14,10 @@ int main(void) {
 
     piocher_tuile(j);        // pioche 1 tuile → ajoutée à 1.json
 
+
+    // Pour le joueur 1
+int nb = nbr_tuiles("1.json");
+printf("Joueur 1 a %d tuiles\n", nb);
+
     return 0;
 }
