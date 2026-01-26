@@ -241,6 +241,7 @@ bool combinaison_valide(Tuile* tuiles, int nb) {
 
     return (gaps <= jokers); // les jokers comblent les trous
 }
+
 /*-------------------------------------------------------------------------------------------------------------------------------------*/
 bool combinaison_valide_30(Tuile* tuiles, int nb) {
     if (!combinaison_valide(tuiles, nb))
@@ -317,12 +318,44 @@ void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles) {
 }
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
-void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles) {
+void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles)
+{
+    char pseudo[64] = "";
+    bool tour = false;
+    bool premier_tour = false;
+
+    /* --- relire les infos existantes --- */
+    FILE* fr = fopen(fichier, "r");
+    if (fr) {
+        char buf[256];
+        while (fgets(buf, sizeof(buf), fr)) {
+            if (sscanf(buf, " \"pseudo\":\"%63[^\"]\"", pseudo) == 1) {}
+            else if (strstr(buf, "\"tour\":true")) tour = true;
+            else if (strstr(buf, "\"tour\":false")) tour = false;
+            else if (strstr(buf, "\"premier_tour\":true")) premier_tour = true;
+            else if (strstr(buf, "\"premier_tour\":false")) premier_tour = false;
+        }
+        fclose(fr);
+    }
+
+    /* fallback si jamais */
+    if (pseudo[0] == '\0')
+        strcpy(pseudo, j.pseudo);
+
+    /* --- réécriture complète --- */
     FILE* f = fopen(fichier, "w");
+    if (!f) return;
 
     fprintf(f,
-        "{\n  \"pseudo\":\"%s\",\n  \"tour\":%s,\n  \"premier_tour\": true,\n  \"tuiles\":[\n",
-        j.pseudo, j.tour ? "true" : "false");
+        "{\n"
+        "  \"pseudo\":\"%s\",\n"
+        "  \"tour\":%s,\n"
+        "  \"premier_tour\":%s,\n"
+        "  \"tuiles\":[\n",
+        pseudo,
+        tour ? "true" : "false",
+        premier_tour ? "true" : "false"
+    );
 
     for (int i = 0; i < nb_tuiles; i++) {
         if (i) fprintf(f, ",\n");
@@ -336,6 +369,7 @@ void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_
     fprintf(f, "\n  ]\n}\n");
     fclose(f);
 }
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------*/
 void ajouter_a_table(Tuile* comb, int n) {
