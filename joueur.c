@@ -76,13 +76,13 @@ void distribuer_tuile() {
 
     for (int i = 0; i < 14; i++)
         for (int j = 0; j < nb_joueurs; j++)
-            piocher_tuile(players[j]);
+            piocher_tuile(&players[j]);
 
     free(players);
 }
 
 /*------------------------------------------------------------------------------------------------------------*/
-void piocher_tuile(Joueur j) {
+void piocher_tuile(Joueur* j) {
     Tuile pioche[MAX_TUILES], tuiles_joueur[MAX_TUILES];
     int np = 0, nj = 0;
     char ligne[256];
@@ -110,31 +110,22 @@ void piocher_tuile(Joueur j) {
     Tuile t = pioche[0];
 
     f = fopen("pioche.json", "w");
-    fprintf(f, "[\n");
     for (int i = 1; i < np; i++)
         fprintf(f,
             "  {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-            pioche[i].id,
-            pioche[i].valeur,
-            pioche[i].couleur,
+            pioche[i].id, pioche[i].valeur, pioche[i].couleur,
             pioche[i].joker ? "true" : "false",
             (i < np - 1) ? "," : "");
-    fprintf(f, "]\n");
     fclose(f);
 
-    FILE* fj = fopen(j.chevalet, "r");
+    FILE* fj = fopen(j->chevalet, "r");
     if (!fj) return;
 
     while (fgets(ligne, sizeof(ligne), fj)) {
-        if (strstr(ligne, "\"pseudo\"")) {
-            sscanf(ligne, " \"pseudo\": \"%49[^\"]\"", pseudo);
-            continue;
-        }
+        if (strstr(ligne, "\"pseudo\"")) sscanf(ligne, " \"pseudo\": \"%49[^\"]\"", pseudo);
         if (strstr(ligne, "\"tour\": true")) tour = 1;
         else if (strstr(ligne, "\"tour\": false")) tour = 0;
-
         if (strstr(ligne, "\"premier_tour\": false")) premier_tour = false;
-
         if (strchr(ligne, '{') && strstr(ligne, "id")) {
             sscanf(ligne,
                 " {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
@@ -149,25 +140,20 @@ void piocher_tuile(Joueur j) {
 
     tuiles_joueur[nj++] = t;
 
-    fj = fopen(j.chevalet, "w");
+    fj = fopen(j->chevalet, "w");
     fprintf(fj,
         "{\n  \"pseudo\": \"%s\",\n  \"tour\": %s,\n  \"premier_tour\": %s,\n  \"tuiles\": [\n",
-        pseudo,
-        tour ? "true" : "false",
-        premier_tour ? "true" : "false");
-
+        pseudo, tour ? "true" : "false", premier_tour ? "true" : "false");
     for (int i = 0; i < nj; i++)
         fprintf(fj,
             "    {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-            tuiles_joueur[i].id,
-            tuiles_joueur[i].valeur,
-            tuiles_joueur[i].couleur,
+            tuiles_joueur[i].id, tuiles_joueur[i].valeur, tuiles_joueur[i].couleur,
             tuiles_joueur[i].joker ? "true" : "false",
             (i < nj - 1) ? "," : "");
-
     fprintf(fj, "  ]\n}\n");
     fclose(fj);
 }
+
 
 /*------------------------------------------------------------------------------------------------------------------------------*/
 bool combinaison_valide(Tuile* tuiles, int nb) {
@@ -413,29 +399,50 @@ bool est_premier_tour(Joueur j) {
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
-void jouer_combinaison(Joueur j)
+void charger_joueur(Joueur* j) {
+    char ligne[256];
+    j->tour = false;        // valeurs par défaut
+    j->premier_tour = false;
+    j->pseudo[0] = '\0';
+
+    FILE* f = fopen(j->chevalet, "r");
+    if (!f) return;
+
+    while (fgets(ligne, sizeof(ligne), f)) {
+        if (strstr(ligne, "\"pseudo\"")) {
+            sscanf(ligne, " \"pseudo\" : \"%22[^\"]\"", j->pseudo); // %22 pour pseudo max
+        } else if (strstr(ligne, "\"tour\"")) {
+            if (strstr(ligne, "true")) j->tour = true;
+            else j->tour = false;
+        } else if (strstr(ligne, "\"premier_tour\"")) {
+            if (strstr(ligne, "true")) j->premier_tour = true;
+            else j->premier_tour = false;
+        }
+    }
+    fclose(f);
+}
+
+
+/*---------------------------------------------------------------------------------------------------------------------------------------*/
+void jouer_combinaison(Joueur* j)
 {
     Tuile tuiles_joueur[MAX_TUILES];
     int nb_tuiles = 0;
     char ligne[256];
-    bool premier_tour = est_premier_tour(j);
+    bool premier_tour = est_premier_tour(*j);
     int somme_cumulee = 0;
 
     if (premier_tour) {
         FILE* ft = fopen("tampon.json", "w");
-        if (ft) {
-            fprintf(ft, "[\n]\n");
-            fclose(ft);
-        }
+        if (ft) { fprintf(ft, "[\n]\n"); fclose(ft); }
         printf(">>> Premier tour : au moins 30 points.\n");
     }
 
     while (1) {
-        charger_chevalet(j.chevalet, tuiles_joueur, &nb_tuiles);
+        charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
         afficher_tuiles(tuiles_joueur, nb_tuiles);
 
         int indices[MAX_TUILES], nb_comb = 0;
-
         printf("Entrez les IDs des tuiles à poser (min 3) :\n");
         if (!fgets(ligne, sizeof(ligne), stdin)) return;
 
@@ -448,36 +455,24 @@ void jouer_combinaison(Joueur j)
             tok = strtok(NULL, " \n");
         }
 
-        if (nb_comb < 3) {
-            printf("Au moins 3 tuiles.\n");
-            continue;
-        }
+        if (nb_comb < 3) { printf("Au moins 3 tuiles.\n"); continue; }
 
         Tuile comb[MAX_TUILES];
-        for (int i = 0; i < nb_comb; i++)
-            comb[i] = tuiles_joueur[indices[i]];
+        for (int i = 0; i < nb_comb; i++) comb[i] = tuiles_joueur[indices[i]];
 
-        if (!combinaison_valide(comb, nb_comb)) {
-            printf("Combinaison invalide.\n");
-            continue;
-        }
+        if (!combinaison_valide(comb, nb_comb)) { printf("Combinaison invalide.\n"); continue; }
 
-        /* ---------- PREMIER TOUR ---------- */
         if (premier_tour) {
             int somme = 0, max_val = 0;
             for (int i = 0; i < nb_comb; i++)
-                if (!comb[i].joker && comb[i].valeur > max_val)
-                    max_val = comb[i].valeur;
-
+                if (!comb[i].joker && comb[i].valeur > max_val) max_val = comb[i].valeur;
             for (int i = 0; i < nb_comb; i++)
                 somme += comb[i].joker ? max_val : comb[i].valeur;
-
             somme_cumulee += somme;
 
             FILE* ft = fopen("tampon.json", "r+");
             fseek(ft, -2, SEEK_END);
             if (ftell(ft) > 2) fprintf(ft, ",\n");
-
             fprintf(ft, "  [\n");
             for (int i = 0; i < nb_comb; i++)
                 fprintf(ft,
@@ -489,73 +484,48 @@ void jouer_combinaison(Joueur j)
             fclose(ft);
 
             printf("Somme cumulée = %d\n", somme_cumulee);
-
             printf("Encore une combinaison ? (o/n) ");
             fgets(ligne, sizeof(ligne), stdin);
+            if (ligne[0] == 'o' || ligne[0] == 'O') continue;
 
-            if (ligne[0] == 'o' || ligne[0] == 'O')
-                continue;
+            if (somme_cumulee < 30) { printf("Premier tour raté.\n"); piocher_tuile(j); return; }
 
-            if (somme_cumulee < 30) {
-                printf("Premier tour raté.\n");
-                piocher_tuile(j);
-                return;
-            }
-
-            /* 🔥 CORRECTION MAJEURE ICI 🔥 */
             FILE* ftam = fopen("tampon.json", "r");
-            FILE* ftab = fopen("table.json", "w");
-
+            FILE* ftab = fopen("table.json", "a"); // append pour ne pas écraser
             char buf[512];
-            while (fgets(buf, sizeof(buf), ftam))
-                fputs(buf, ftab);
-
+            while (fgets(buf, sizeof(buf), ftam)) fputs(buf, ftab);
             fclose(ftam);
             fclose(ftab);
 
-            /* retirer les tuiles jouées */
-            Tuile restantes[MAX_TUILES];
-            int nb_restantes = 0;
-
+            Tuile restantes[MAX_TUILES]; int nb_restantes = 0;
             for (int i = 0; i < nb_tuiles; i++) {
                 bool garder = true;
                 FILE* ft2 = fopen("tampon.json", "r");
                 char b[256];
                 while (fgets(b, sizeof(b), ft2)) {
                     int id;
-                    if (sscanf(b, " {\"id\":%d", &id) == 1 &&
-                        id == tuiles_joueur[i].id) {
-                        garder = false;
-                        break;
-                    }
+                    if (sscanf(b, " {\"id\":%d", &id) == 1 && id == tuiles_joueur[i].id) { garder = false; break; }
                 }
                 fclose(ft2);
                 if (garder) restantes[nb_restantes++] = tuiles_joueur[i];
             }
-
-            sauvegarder_chevalet(j.chevalet, j, restantes, nb_restantes);
+            sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes);
             printf("Premier tour validé.\n");
             return;
         }
 
-        /* ---------- TOURS SUIVANTS ---------- */
+        // TOURS SUIVANTS
         ajouter_a_table(comb, nb_comb);
-
-        Tuile restantes[MAX_TUILES];
-        int nb_restantes = 0;
+        Tuile restantes[MAX_TUILES]; int nb_restantes = 0;
         for (int i = 0; i < nb_tuiles; i++) {
             bool garder = true;
-            for (int k = 0; k < nb_comb; k++)
-                if (i == indices[k]) garder = false;
+            for (int k = 0; k < nb_comb; k++) if (i == indices[k]) garder = false;
             if (garder) restantes[nb_restantes++] = tuiles_joueur[i];
         }
-
-        sauvegarder_chevalet(j.chevalet, j, restantes, nb_restantes);
+        sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes);
         printf("Combinaison posée.\n");
-
         printf("Encore une ? (o/n) ");
         fgets(ligne, sizeof(ligne), stdin);
-        if (ligne[0] != 'o' && ligne[0] != 'O')
-            return;
+        if (ligne[0] != 'o' && ligne[0] != 'O') return;
     }
 }

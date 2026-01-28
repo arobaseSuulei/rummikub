@@ -12,12 +12,12 @@ int nbr_joueur(void);
 
 // Gestion tuiles
 void distribuer_tuile(void);
-void piocher_tuile(Joueur j);
+void piocher_tuile(Joueur* j);
 
 // Combinaisons
 bool combinaison_valide(Tuile* comb, int n);
 bool combinaison_valide_30(Tuile* comb, int n);
-void jouer_combinaison(Joueur j);
+void jouer_combinaison(Joueur* j);
 
 // Premier tour
 bool est_premier_tour(Joueur j);
@@ -27,5 +27,8 @@ void afficher_tuiles(Tuile tuiles[], int nb_tuiles);
 void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles);
 void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles);
 void ajouter_a_table(Tuile* comb, int n);
+
+// **NOUVEAU**
+void charger_joueur(Joueur* j);  // charge pseudo, tour, premier_tour depuis le fichier JSON
 
 #endif

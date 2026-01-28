@@ -13,9 +13,9 @@ typedef struct Tuile{
 
 typedef struct Joueur{
     char pseudo[23];  // max 22 caractères + '\0'
-    bool estIa;        // 0 = humain, 1 = IA
     char chevalet[50];
     bool tour;
+    bool premier_tour;
 } Joueur;
 
 
