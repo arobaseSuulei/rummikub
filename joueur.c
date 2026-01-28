@@ -1,20 +1,26 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include "struct.h"
-#include "Tuile.h"
-#include "joueur.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <cjson/cJSON.h>
+#include "struct.h"
+#include "Tuile.h"
+#include "joueur.h"
 
 /*-----------------------------------------------------------------------------------------------------------------------------*/
 int nbr_joueur(){
     int n;
     printf("Entrer le nombre de joueur : ");
     scanf("%d",&n);
+
+    cJSON *root = cJSON_CreateNumber(n);
+    char *str = cJSON_Print(root);
     FILE* f = fopen("nombre_joueurs.txt", "w");
-    fprintf(f, "%d", n);
-    fclose(f);
+    if(f) { fprintf(f, "%s", str); fclose(f); }
+    cJSON_Delete(root);
+    free(str);
+
     return n;
 }
 
@@ -65,13 +71,17 @@ void distribuer_tuile() {
     if (!players) return;
 
     for (int j = 0; j < nb_joueurs; j++) {
-        FILE* fj = fopen(players[j].chevalet, "w");
-        if (!fj) continue;
+        cJSON *root = cJSON_CreateObject();
+        cJSON_AddStringToObject(root, "pseudo", players[j].pseudo);
+        cJSON_AddBoolToObject(root, "tour", (j==0));
+        cJSON_AddBoolToObject(root, "premier_tour", true);
+        cJSON_AddItemToObject(root, "tuiles", cJSON_CreateArray());
 
-        fprintf(fj,
-            "{\n  \"pseudo\": \"%s\",\n  \"tour\": %s,\n  \"premier_tour\": true,\n  \"tuiles\": []\n}\n",
-            players[j].pseudo, (j == 0) ? "true" : "false");
-        fclose(fj);
+        char *str = cJSON_Print(root);
+        FILE* fj = fopen(players[j].chevalet, "w");
+        if(fj){ fprintf(fj, "%s", str); fclose(fj); }
+        cJSON_Delete(root);
+        free(str);
     }
 
     for (int i = 0; i < 14; i++)
@@ -83,77 +93,68 @@ void distribuer_tuile() {
 
 /*------------------------------------------------------------------------------------------------------------*/
 void piocher_tuile(Joueur* j) {
-    Tuile pioche[MAX_TUILES], tuiles_joueur[MAX_TUILES];
-    int np = 0, nj = 0;
-    char ligne[256];
-    char pseudo[50] = "";
-    int tour = 0;
-    bool premier_tour = true;
+    Tuile tuiles_joueur[MAX_TUILES];
+    int nb_tuiles = 0;
 
     FILE* f = fopen("pioche.json", "r");
     if (!f) return;
-
-    while (fgets(ligne, sizeof(ligne), f)) {
-        if (strchr(ligne, '{')) {
-            sscanf(ligne,
-                " {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
-                &pioche[np].id,
-                &pioche[np].valeur,
-                &pioche[np].couleur);
-            pioche[np].joker = strstr(ligne, "true") != NULL;
-            np++;
-        }
-    }
-    fclose(f);
-    if (np == 0) return;
-
-    Tuile t = pioche[0];
-
-    f = fopen("pioche.json", "w");
-    for (int i = 1; i < np; i++)
-        fprintf(f,
-            "  {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-            pioche[i].id, pioche[i].valeur, pioche[i].couleur,
-            pioche[i].joker ? "true" : "false",
-            (i < np - 1) ? "," : "");
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *data = malloc(fsize+1);
+    fread(data, 1, fsize, f);
+    data[fsize] = 0;
     fclose(f);
 
-    FILE* fj = fopen(j->chevalet, "r");
-    if (!fj) return;
+    cJSON *root = cJSON_Parse(data);
+    if (!root) { free(data); return; }
 
-    while (fgets(ligne, sizeof(ligne), fj)) {
-        if (strstr(ligne, "\"pseudo\"")) sscanf(ligne, " \"pseudo\": \"%49[^\"]\"", pseudo);
-        if (strstr(ligne, "\"tour\": true")) tour = 1;
-        else if (strstr(ligne, "\"tour\": false")) tour = 0;
-        if (strstr(ligne, "\"premier_tour\": false")) premier_tour = false;
-        if (strchr(ligne, '{') && strstr(ligne, "id")) {
-            sscanf(ligne,
-                " {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
-                &tuiles_joueur[nj].id,
-                &tuiles_joueur[nj].valeur,
-                &tuiles_joueur[nj].couleur);
-            tuiles_joueur[nj].joker = strstr(ligne, "true") != NULL;
-            nj++;
-        }
-    }
-    fclose(fj);
+    cJSON *first = cJSON_GetArrayItem(root, 0);
+    if(!first){ cJSON_Delete(root); free(data); return; }
 
-    tuiles_joueur[nj++] = t;
+    Tuile t;
+    t.id = cJSON_GetObjectItem(first,"id")->valueint;
+    t.valeur = cJSON_GetObjectItem(first,"valeur")->valueint;
+    t.couleur = cJSON_GetObjectItem(first,"couleur")->valuestring[0];
+    t.joker = cJSON_IsTrue(cJSON_GetObjectItem(first,"joker"));
 
-    fj = fopen(j->chevalet, "w");
-    fprintf(fj,
-        "{\n  \"pseudo\": \"%s\",\n  \"tour\": %s,\n  \"premier_tour\": %s,\n  \"tuiles\": [\n",
-        pseudo, tour ? "true" : "false", premier_tour ? "true" : "false");
-    for (int i = 0; i < nj; i++)
-        fprintf(fj,
-            "    {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-            tuiles_joueur[i].id, tuiles_joueur[i].valeur, tuiles_joueur[i].couleur,
-            tuiles_joueur[i].joker ? "true" : "false",
-            (i < nj - 1) ? "," : "");
-    fprintf(fj, "  ]\n}\n");
-    fclose(fj);
+    cJSON_DeleteItemFromArray(root,0);
+    char *new_data = cJSON_Print(root);
+    FILE* fw = fopen("pioche.json","w");
+    if(fw){ fprintf(fw,"%s",new_data); fclose(fw); }
+    free(new_data);
+    free(data);
+    cJSON_Delete(root);
+
+    f = fopen(j->chevalet,"r");
+    if(!f) return;
+    fseek(f,0,SEEK_END);
+    fsize = ftell(f);
+    fseek(f,0,SEEK_SET);
+    data = malloc(fsize+1);
+    fread(data,1,fsize,f);
+    data[fsize] = 0;
+    fclose(f);
+
+    root = cJSON_Parse(data);
+    if(!root){ free(data); return; }
+
+    cJSON *tuiles_obj = cJSON_GetObjectItem(root,"tuiles");
+    cJSON *new_tuile = cJSON_CreateObject();
+    cJSON_AddNumberToObject(new_tuile,"id",t.id);
+    cJSON_AddNumberToObject(new_tuile,"valeur",t.valeur);
+    char str_color[2]={t.couleur,0};
+    cJSON_AddStringToObject(new_tuile,"couleur",str_color);
+    cJSON_AddBoolToObject(new_tuile,"joker",t.joker);
+    cJSON_AddItemToArray(tuiles_obj,new_tuile);
+
+    new_data = cJSON_Print(root);
+    fw = fopen(j->chevalet,"w");
+    if(fw){ fprintf(fw,"%s",new_data); fclose(fw); }
+    free(new_data);
+    free(data);
+    cJSON_Delete(root);
 }
-
 
 /*------------------------------------------------------------------------------------------------------------------------------*/
 bool combinaison_valide(Tuile* tuiles, int nb) {
@@ -163,7 +164,6 @@ bool combinaison_valide(Tuile* tuiles, int nb) {
     for (int i = 0; i < nb; i++)
         if (tuiles[i].joker) jokers++;
 
-    // Vérification si c'est un set (mêmes valeurs, couleurs différentes)
     int valeur_set = -1;
     bool possible_set = true;
     char couleurs[nb];
@@ -172,235 +172,191 @@ bool combinaison_valide(Tuile* tuiles, int nb) {
     for (int i = 0; i < nb; i++) {
         if (tuiles[i].joker) continue;
         if (valeur_set == -1) valeur_set = tuiles[i].valeur;
-        else if (tuiles[i].valeur != valeur_set) {
-            possible_set = false;
-            break;
-        }
-
-        for (int j = 0; j < couleur_count; j++)
-            if (couleurs[j] == tuiles[i].couleur) {
-                possible_set = false;
-                break;
-            }
-        if (!possible_set) break;
+        else if (tuiles[i].valeur != valeur_set) { possible_set=false; break; }
+        for (int j=0;j<couleur_count;j++) if(couleurs[j]==tuiles[i].couleur){ possible_set=false; break;}
+        if(!possible_set) break;
         couleurs[couleur_count++] = tuiles[i].couleur;
     }
 
-    if (possible_set) return true;
+    if(possible_set) return true;
 
-    // Vérification si c'est une suite (valeurs consécutives, même couleur)
-    if (nb - jokers < 2) return false; // minimum 3 tuiles avec jokers inclus
+    if(nb-jokers<2) return false;
 
-    char couleur_suite = '\0';
-    int valeurs[nb - jokers];
-    int v_idx = 0;
-    for (int i = 0; i < nb; i++) {
-        if (tuiles[i].joker) continue;
-        if (couleur_suite == '\0') couleur_suite = tuiles[i].couleur;
-        else if (tuiles[i].couleur != couleur_suite) return false;
-        valeurs[v_idx++] = tuiles[i].valeur;
+    char couleur_suite='\0';
+    int valeurs[nb-jokers];
+    int v_idx=0;
+    for(int i=0;i<nb;i++){
+        if(tuiles[i].joker) continue;
+        if(couleur_suite=='\0') couleur_suite=tuiles[i].couleur;
+        else if(tuiles[i].couleur!=couleur_suite) return false;
+        valeurs[v_idx++]=tuiles[i].valeur;
     }
 
-    // Tri des valeurs pour vérifier les écarts
-    for (int i = 0; i < v_idx - 1; i++)
-        for (int j = i + 1; j < v_idx; j++)
-            if (valeurs[i] > valeurs[j]) {
-                int tmp = valeurs[i]; valeurs[i] = valeurs[j]; valeurs[j] = tmp;
-            }
+    for(int i=0;i<v_idx-1;i++)
+        for(int j=i+1;j<v_idx;j++)
+            if(valeurs[i]>valeurs[j]){int tmp=valeurs[i]; valeurs[i]=valeurs[j]; valeurs[j]=tmp;}
 
-    // Vérifier qu'il n'y a pas de doublons dans les valeurs
-    for (int i = 0; i < v_idx - 1; i++)
-        if (valeurs[i] == valeurs[i + 1])
-            return false;
+    for(int i=0;i<v_idx-1;i++) if(valeurs[i]==valeurs[i+1]) return false;
 
-    // Compter les "trous" que les jokers peuvent remplir
-    int gaps = 0;
-    for (int i = 0; i < v_idx - 1; i++)
-        gaps += valeurs[i + 1] - valeurs[i] - 1;
+    int gaps=0;
+    for(int i=0;i<v_idx-1;i++) gaps+=valeurs[i+1]-valeurs[i]-1;
 
-    return (gaps <= jokers);
+    return (gaps<=jokers);
 }
-
 
 /*-------------------------------------------------------------------------------------------------------------------------------------*/
 void afficher_tuiles(Tuile tuiles[], int nb_tuiles) {
     printf("Vos tuiles :\n");
     for (int i = 0; i < nb_tuiles; i++) {
         printf("%d: %d%c%s\n",
-               tuiles[i].id,                  // afficher l'id
+               tuiles[i].id,
                tuiles[i].valeur,
                tuiles[i].couleur,
                tuiles[i].joker ? " (J)" : "");
     }
 }
 
-
 /*--------------------------------------------------------------------------------------------------------------------------------------*/
 void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles) {
-    char ligne[256];
-    *nb_tuiles = 0;
-
-    FILE* f = fopen(fichier, "r");
-    if (!f) return;
-
-    while (fgets(ligne, sizeof(ligne), f)) {
-        if (strchr(ligne, '{') && strstr(ligne, "id")) {
-            sscanf(ligne,
-                " {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
-                &tuiles[*nb_tuiles].id,
-                &tuiles[*nb_tuiles].valeur,
-                &tuiles[*nb_tuiles].couleur);
-            tuiles[*nb_tuiles].joker = strstr(ligne, "true") != NULL;
-            (*nb_tuiles)++;
-        }
-    }
+    *nb_tuiles=0;
+    FILE* f=fopen(fichier,"r");
+    if(!f) return;
+    fseek(f,0,SEEK_END);
+    long fsize=ftell(f);
+    fseek(f,0,SEEK_SET);
+    char* data=malloc(fsize+1);
+    fread(data,1,fsize,f);
+    data[fsize]=0;
     fclose(f);
+
+    cJSON *root=cJSON_Parse(data);
+    if(!root){ free(data); return; }
+
+    cJSON *tuiles_array=cJSON_GetObjectItem(root,"tuiles");
+    int count=cJSON_GetArraySize(tuiles_array);
+    for(int i=0;i<count;i++){
+        cJSON *item=cJSON_GetArrayItem(tuiles_array,i);
+        tuiles[*nb_tuiles].id=cJSON_GetObjectItem(item,"id")->valueint;
+        tuiles[*nb_tuiles].valeur=cJSON_GetObjectItem(item,"valeur")->valueint;
+        tuiles[*nb_tuiles].couleur=cJSON_GetObjectItem(item,"couleur")->valuestring[0];
+        tuiles[*nb_tuiles].joker=cJSON_IsTrue(cJSON_GetObjectItem(item,"joker"));
+        (*nb_tuiles)++;
+    }
+
+    free(data);
+    cJSON_Delete(root);
 }
 
 /*--------------------------------------------------------------------------------------------------------------------------------------------*/
-void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles)
+void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles, bool premier_tour_valide)
 {
-    char pseudo[64] = "";
-    bool tour = false;
-    bool premier_tour = false;
+    cJSON *root = cJSON_CreateObject();
+    if (!root) return;
 
-    FILE* fr = fopen(fichier, "r");
-    if (fr) {
-        char buf[256];
-        while (fgets(buf, sizeof(buf), fr)) {
-            if (sscanf(buf, " \"pseudo\":\"%63[^\"]\"", pseudo) == 1) {}
-            else if (strstr(buf, "\"tour\":true")) tour = true;
-            else if (strstr(buf, "\"tour\":false")) tour = false;
-            else if (strstr(buf, "\"premier_tour\":true")) premier_tour = true;
-            else if (strstr(buf, "\"premier_tour\":false")) premier_tour = false;
-        }
-        fclose(fr);
-    }
+    // pseudo
+    cJSON_AddStringToObject(root, "pseudo", j.pseudo);
 
-    if (pseudo[0] == '\0')
-        strcpy(pseudo, j.pseudo);
+    // tour = false à la fin du tour, toujours
+    cJSON_AddBoolToObject(root, "tour", false);
 
-    FILE* f = fopen(fichier, "w");
-    if (!f) return;
+    // premier_tour = false si validé, sinon on conserve l'ancienne valeur
+    cJSON_AddBoolToObject(root, "premier_tour", premier_tour_valide ? false : j.premier_tour);
 
-    fprintf(f,
-        "{\n"
-        "  \"pseudo\":\"%s\",\n"
-        "  \"tour\":%s,\n"
-        "  \"premier_tour\":%s,\n"
-        "  \"tuiles\":[\n",
-        pseudo,
-        tour ? "true" : "false",
-        premier_tour ? "true" : "false"
-    );
-
+    // tuiles
+    cJSON *array = cJSON_CreateArray();
     for (int i = 0; i < nb_tuiles; i++) {
-        if (i) fprintf(f, ",\n");
-        fprintf(f,
-            "    {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}",
-            tuiles[i].id,
-            tuiles[i].valeur,
-            tuiles[i].couleur,
-            tuiles[i].joker ? "true" : "false");
+        cJSON *tile = cJSON_CreateObject();
+        cJSON_AddNumberToObject(tile, "id", tuiles[i].id);
+        cJSON_AddNumberToObject(tile, "valeur", tuiles[i].valeur);
+        char couleur_str[2] = { tuiles[i].couleur, '\0' };
+        cJSON_AddStringToObject(tile, "couleur", couleur_str);
+        cJSON_AddBoolToObject(tile, "joker", tuiles[i].joker);
+        cJSON_AddItemToArray(array, tile);
+    }
+    cJSON_AddItemToObject(root, "tuiles", array);
+
+    // écrire dans le fichier
+    char *json_str = cJSON_Print(root);
+    if (json_str) {
+        FILE *f = fopen(fichier, "w");
+        if (f) {
+            fprintf(f, "%s\n", json_str);
+            fclose(f);
+        }
+        free(json_str);
     }
 
-    fprintf(f, "\n  ]\n}\n");
-    fclose(f);
+    cJSON_Delete(root);
 }
 
-/*-------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------------------------------------------------------*/
 void ajouter_a_table(Tuile* comb, int n)
 {
     if (n < 3) return;
 
-    Tuile table[100][MAX_TUILES];
-    int tailles[100];
-    int nb_comb = 0;
-
-    /* -------- lecture existante -------- */
+    // Charger table existante
+    cJSON *root = NULL;
     FILE* f = fopen("table.json", "r");
-    if (f) {
-        char ligne[256];
-        int idx = -1;
-
-        while (fgets(ligne, sizeof(ligne), f)) {
-            if (strchr(ligne, '[') && idx == -1) continue;
-
-            if (strchr(ligne, '[')) {
-                idx++;
-                tailles[idx] = 0;
-                continue;
-            }
-
-            if (strchr(ligne, '{')) {
-                sscanf(ligne,
-                    " {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%*[^t]true}",
-                    &table[idx][tailles[idx]].id,
-                    &table[idx][tailles[idx]].valeur,
-                    &table[idx][tailles[idx]].couleur);
-                table[idx][tailles[idx]].joker = strstr(ligne, "true") != NULL;
-                tailles[idx]++;
-            }
-        }
-        nb_comb = idx + 1;
+    if(f){
+        fseek(f,0,SEEK_END);
+        long fsize = ftell(f);
+        fseek(f,0,SEEK_SET);
+        char *data = malloc(fsize+1);
+        fread(data,1,fsize,f);
+        data[fsize]=0;
         fclose(f);
+
+        root = cJSON_Parse(data);
+        free(data);
     }
 
-    /* -------- ajouter nouvelle combinaison -------- */
-    tailles[nb_comb] = n;
-    for (int i = 0; i < n; i++)
-        table[nb_comb][i] = comb[i];
-    nb_comb++;
+    if(!root) root=cJSON_CreateArray();
 
-    /* -------- réécriture propre -------- */
-    FILE* fw = fopen("table.json", "w");
-    if (!fw) return;
-
-    fprintf(fw, "[\n");
-    for (int i = 0; i < nb_comb; i++) {
-        fprintf(fw, "  [\n");
-        for (int j = 0; j < tailles[i]; j++) {
-            fprintf(fw,
-                "    {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-                table[i][j].id,
-                table[i][j].valeur,
-                table[i][j].couleur,
-                table[i][j].joker ? "true" : "false",
-                (j < tailles[i] - 1) ? "," : "");
-        }
-        fprintf(fw, "  ]%s\n", (i < nb_comb - 1) ? "," : "");
+    cJSON *new_comb = cJSON_CreateArray();
+    for(int i=0;i<n;i++){
+        cJSON *item = cJSON_CreateObject();
+        cJSON_AddNumberToObject(item,"id",comb[i].id);
+        cJSON_AddNumberToObject(item,"valeur",comb[i].valeur);
+        char str_color[2]={comb[i].couleur,0};
+        cJSON_AddStringToObject(item,"couleur",str_color);
+        cJSON_AddBoolToObject(item,"joker",comb[i].joker);
+        cJSON_AddItemToArray(new_comb,item);
     }
-    fprintf(fw, "]\n");
-    fclose(fw);
+    cJSON_AddItemToArray(root,new_comb);
+
+    char *str = cJSON_Print(root);
+    FILE* fw = fopen("table.json","w");
+    if(fw){ fprintf(fw,"%s",str); fclose(fw); }
+    free(str);
+    cJSON_Delete(root);
 }
 
-
-
-/*---------------------------------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
 bool est_premier_tour(Joueur j) {
-    FILE* f = fopen(j.chevalet, "r");
-    if (!f) return true;
+    FILE* f = fopen(j.chevalet,"r");
+    if(!f) return true;
 
-    char ligne[256];
-
-    while (fgets(ligne, sizeof(ligne), f)) {
-        if (strstr(ligne, "\"premier_tour\":true")) {
-            fclose(f);
-            return true;
-        }
-        if (strstr(ligne, "\"premier_tour\":false")) {
-            fclose(f);
-            return false;
-        }
-    }
-
+    fseek(f,0,SEEK_END);
+    long fsize = ftell(f);
+    fseek(f,0,SEEK_SET);
+    char *data = malloc(fsize+1);
+    fread(data,1,fsize,f);
+    data[fsize]=0;
     fclose(f);
-    return true;
+
+    cJSON *root = cJSON_Parse(data);
+    free(data);
+    if(!root) return true;
+
+    cJSON *premier = cJSON_GetObjectItem(root,"premier_tour");
+    bool result = premier && cJSON_IsTrue(premier);
+    cJSON_Delete(root);
+    return result;
 }
 
-/*---------------------------------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
 void charger_joueur(Joueur* j) {
-    char ligne[256];
     j->tour = false;        // valeurs par défaut
     j->premier_tour = false;
     j->pseudo[0] = '\0';
@@ -408,124 +364,216 @@ void charger_joueur(Joueur* j) {
     FILE* f = fopen(j->chevalet, "r");
     if (!f) return;
 
-    while (fgets(ligne, sizeof(ligne), f)) {
-        if (strstr(ligne, "\"pseudo\"")) {
-            sscanf(ligne, " \"pseudo\" : \"%22[^\"]\"", j->pseudo); // %22 pour pseudo max
-        } else if (strstr(ligne, "\"tour\"")) {
-            if (strstr(ligne, "true")) j->tour = true;
-            else j->tour = false;
-        } else if (strstr(ligne, "\"premier_tour\"")) {
-            if (strstr(ligne, "true")) j->premier_tour = true;
-            else j->premier_tour = false;
-        }
-    }
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char* content = malloc(fsize + 1);
+    if (!content) { fclose(f); return; }
+    fread(content, 1, fsize, f);
+    content[fsize] = '\0';
     fclose(f);
+
+    cJSON *json = cJSON_Parse(content);
+    free(content);
+    if (!json) return;
+
+    cJSON *pseudo = cJSON_GetObjectItem(json, "pseudo");
+    if (pseudo && pseudo->valuestring) {
+        strncpy(j->pseudo, pseudo->valuestring, 22);
+        j->pseudo[22] = '\0'; // garantir terminaison
+    }
+
+    cJSON *tour = cJSON_GetObjectItem(json, "tour");
+    if (tour) j->tour = cJSON_IsTrue(tour);
+
+    cJSON *premier = cJSON_GetObjectItem(json, "premier_tour");
+    if (premier) j->premier_tour = cJSON_IsTrue(premier);
+
+    cJSON_Delete(json);
 }
 
-
-/*---------------------------------------------------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------------------------------------*/
 void jouer_combinaison(Joueur* j)
 {
     Tuile tuiles_joueur[MAX_TUILES];
     int nb_tuiles = 0;
-    char ligne[256];
     bool premier_tour = est_premier_tour(*j);
     int somme_cumulee = 0;
 
-    if (premier_tour) {
-        FILE* ft = fopen("tampon.json", "w");
-        if (ft) { fprintf(ft, "[\n]\n"); fclose(ft); }
+    if(premier_tour){
+        cJSON *empty_array = cJSON_CreateArray();
+        char *str = cJSON_Print(empty_array);
+        FILE* ft = fopen("tampon.json","w");
+        if(ft){ fprintf(ft,"%s",str); fclose(ft); }
+        free(str);
+        cJSON_Delete(empty_array);
         printf(">>> Premier tour : au moins 30 points.\n");
     }
 
-    while (1) {
+    char ligne[256];
+    while(1){
+        // TOUJOURS recharger depuis le fichier pour avoir les vraies données
         charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
         afficher_tuiles(tuiles_joueur, nb_tuiles);
 
-        int indices[MAX_TUILES], nb_comb = 0;
+        int indices[MAX_TUILES], nb_comb=0;
         printf("Entrez les IDs des tuiles à poser (min 3) :\n");
-        if (!fgets(ligne, sizeof(ligne), stdin)) return;
+        if(!fgets(ligne,sizeof(ligne),stdin)) break;
 
-        char* tok = strtok(ligne, " \n");
-        while (tok) {
+        char *tok = strtok(ligne," \n");
+        while(tok){
             int id = atoi(tok);
-            for (int i = 0; i < nb_tuiles; i++)
-                if (tuiles_joueur[i].id == id)
-                    indices[nb_comb++] = i;
-            tok = strtok(NULL, " \n");
+            for(int i=0;i<nb_tuiles;i++)
+                if(tuiles_joueur[i].id==id) indices[nb_comb++]=i;
+            tok=strtok(NULL," \n");
         }
 
-        if (nb_comb < 3) { printf("Au moins 3 tuiles.\n"); continue; }
+        if(nb_comb<3){ printf("Au moins 3 tuiles.\n"); continue; }
 
         Tuile comb[MAX_TUILES];
-        for (int i = 0; i < nb_comb; i++) comb[i] = tuiles_joueur[indices[i]];
+        for(int i=0;i<nb_comb;i++) comb[i]=tuiles_joueur[indices[i]];
 
-        if (!combinaison_valide(comb, nb_comb)) { printf("Combinaison invalide.\n"); continue; }
+        if(!combinaison_valide(comb, nb_comb)){ printf("Combinaison invalide.\n"); continue; }
 
-        if (premier_tour) {
-            int somme = 0, max_val = 0;
-            for (int i = 0; i < nb_comb; i++)
-                if (!comb[i].joker && comb[i].valeur > max_val) max_val = comb[i].valeur;
-            for (int i = 0; i < nb_comb; i++)
-                somme += comb[i].joker ? max_val : comb[i].valeur;
+        if(premier_tour){
+            int somme=0, max_val=0;
+            for(int i=0;i<nb_comb;i++) if(!comb[i].joker && comb[i].valeur>max_val) max_val=comb[i].valeur;
+            for(int i=0;i<nb_comb;i++) somme+=comb[i].joker? max_val : comb[i].valeur;
             somme_cumulee += somme;
 
-            FILE* ft = fopen("tampon.json", "r+");
-            fseek(ft, -2, SEEK_END);
-            if (ftell(ft) > 2) fprintf(ft, ",\n");
-            fprintf(ft, "  [\n");
-            for (int i = 0; i < nb_comb; i++)
-                fprintf(ft,
-                    "    {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
-                    comb[i].id, comb[i].valeur, comb[i].couleur,
-                    comb[i].joker ? "true" : "false",
-                    (i < nb_comb - 1) ? "," : "");
-            fprintf(ft, "  ]\n]\n");
-            fclose(ft);
+            // Charger tampon.json
+            cJSON *tampon = NULL;
+            FILE* ft = fopen("tampon.json","r");
+            if(ft){
+                fseek(ft,0,SEEK_END);
+                long fsize = ftell(ft);
+                fseek(ft,0,SEEK_SET);
+                char *data = malloc(fsize+1);
+                fread(data,1,fsize,ft);
+                data[fsize]=0;
+                fclose(ft);
+                tampon = cJSON_Parse(data);
+                free(data);
+            }
+            if(!tampon) tampon = cJSON_CreateArray();
 
+            cJSON *new_comb = cJSON_CreateArray();
+            for(int i=0;i<nb_comb;i++){
+                cJSON *item = cJSON_CreateObject();
+                cJSON_AddNumberToObject(item,"id",comb[i].id);
+                cJSON_AddNumberToObject(item,"valeur",comb[i].valeur);
+                char str_color[2]={comb[i].couleur,0};
+                cJSON_AddStringToObject(item,"couleur",str_color);
+                cJSON_AddBoolToObject(item,"joker",comb[i].joker);
+                cJSON_AddItemToArray(new_comb,item);
+            }
+            cJSON_AddItemToArray(tampon,new_comb);
+
+            char *str = cJSON_Print(tampon);
+            ft = fopen("tampon.json","w");
+            if(ft){ fprintf(ft,"%s",str); fclose(ft); }
+            free(str);
+
+            // RETIRER les tuiles du fichier IMMÉDIATEMENT
+            Tuile restantes[MAX_TUILES];
+            int nb_restantes = 0;
+            for(int i=0;i<nb_tuiles;i++){
+                bool garder = true;
+                for(int k=0;k<nb_comb;k++){
+                    if(tuiles_joueur[i].id == comb[k].id){
+                        garder = false;
+                        break;
+                    }
+                }
+                if(garder){
+                    restantes[nb_restantes] = tuiles_joueur[i];
+                    nb_restantes++;
+                }
+            }
+            
+            // SAUVEGARDER DIRECTEMENT dans le fichier
+            sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
+            
             printf("Somme cumulée = %d\n", somme_cumulee);
             printf("Encore une combinaison ? (o/n) ");
-            fgets(ligne, sizeof(ligne), stdin);
-            if (ligne[0] == 'o' || ligne[0] == 'O') continue;
+            fgets(ligne,sizeof(ligne),stdin);
+            if(ligne[0]=='o'||ligne[0]=='O') continue;
 
-            if (somme_cumulee < 30) { printf("Premier tour raté.\n"); piocher_tuile(j); return; }
-
-            FILE* ftam = fopen("tampon.json", "r");
-            FILE* ftab = fopen("table.json", "a"); // append pour ne pas écraser
-            char buf[512];
-            while (fgets(buf, sizeof(buf), ftam)) fputs(buf, ftab);
-            fclose(ftam);
-            fclose(ftab);
-
-            Tuile restantes[MAX_TUILES]; int nb_restantes = 0;
-            for (int i = 0; i < nb_tuiles; i++) {
-                bool garder = true;
-                FILE* ft2 = fopen("tampon.json", "r");
-                char b[256];
-                while (fgets(b, sizeof(b), ft2)) {
-                    int id;
-                    if (sscanf(b, " {\"id\":%d", &id) == 1 && id == tuiles_joueur[i].id) { garder = false; break; }
-                }
-                fclose(ft2);
-                if (garder) restantes[nb_restantes++] = tuiles_joueur[i];
+            if(somme_cumulee<30){
+                printf("Premier tour raté.\n");
+                piocher_tuile(j);
+                cJSON_Delete(tampon);
+                return;
             }
-            sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes);
+
+            // Transférer tampon à table
+            FILE* ftam = fopen("tampon.json","r");
+            if(ftam){
+                fseek(ftam,0,SEEK_END);
+                long fsize = ftell(ftam);
+                fseek(ftam,0,SEEK_SET);
+                char *data = malloc(fsize+1);
+                fread(data,1,fsize,ftam);
+                data[fsize]=0;
+                fclose(ftam);
+
+                cJSON *tampon_data = cJSON_Parse(data);
+                free(data);
+                if(tampon_data){
+                    int n = cJSON_GetArraySize(tampon_data);
+                    for(int i=0;i<n;i++){
+                        cJSON *comb_json = cJSON_GetArrayItem(tampon_data,i);
+                        int m = cJSON_GetArraySize(comb_json);
+                        Tuile tmp[MAX_TUILES];
+                        for(int k=0;k<m;k++){
+                            cJSON *tile = cJSON_GetArrayItem(comb_json,k);
+                            tmp[k].id = cJSON_GetObjectItem(tile,"id")->valueint;
+                            tmp[k].valeur = cJSON_GetObjectItem(tile,"valeur")->valueint;
+                            tmp[k].couleur = cJSON_GetObjectItem(tile,"couleur")->valuestring[0];
+                            tmp[k].joker = cJSON_IsTrue(cJSON_GetObjectItem(tile,"joker"));
+                        }
+                        ajouter_a_table(tmp,m);
+                    }
+                    cJSON_Delete(tampon_data);
+                }
+            }
+
             printf("Premier tour validé.\n");
+            sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, true);
+            cJSON_Delete(tampon);
             return;
         }
 
-        // TOURS SUIVANTS
-        ajouter_a_table(comb, nb_comb);
-        Tuile restantes[MAX_TUILES]; int nb_restantes = 0;
-        for (int i = 0; i < nb_tuiles; i++) {
+        // Tours suivants
+        ajouter_a_table(comb,nb_comb);
+
+        // RETIRER du fichier IMMÉDIATEMENT
+        Tuile restantes[MAX_TUILES];
+        int nb_restantes = 0;
+        for(int i=0;i<nb_tuiles;i++){
             bool garder = true;
-            for (int k = 0; k < nb_comb; k++) if (i == indices[k]) garder = false;
-            if (garder) restantes[nb_restantes++] = tuiles_joueur[i];
+            for(int k=0;k<nb_comb;k++){
+                if(tuiles_joueur[i].id == comb[k].id){
+                    garder = false;
+                    break;
+                }
+            }
+            if(garder){
+                restantes[nb_restantes] = tuiles_joueur[i];
+                nb_restantes++;
+            }
         }
-        sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes);
+
+        // SAUVEGARDER DIRECTEMENT
+        sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
+        
         printf("Combinaison posée.\n");
         printf("Encore une ? (o/n) ");
-        fgets(ligne, sizeof(ligne), stdin);
-        if (ligne[0] != 'o' && ligne[0] != 'O') return;
+        fgets(ligne,sizeof(ligne),stdin);
+        if(ligne[0]!='o' && ligne[0]!='O') return;
+        
+        // Recharger pour la prochaine itération
+        charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
     }
 }

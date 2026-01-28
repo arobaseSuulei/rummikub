@@ -25,7 +25,7 @@ bool est_premier_tour(Joueur j);
 // Utilitaires affichage / fichier
 void afficher_tuiles(Tuile tuiles[], int nb_tuiles);
 void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles);
-void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles);
+void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles, bool premier_tour_valide);
 void ajouter_a_table(Tuile* comb, int n);
 
 // **NOUVEAU**

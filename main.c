@@ -7,9 +7,9 @@
 
 int main(void) {
 
-     //creer_pioche();          // crée pioche.json
-     //distribuer_tuile();      // crée X.json + distribue 14 tuiles
-
+     /*creer_pioche();          // crée pioche.json
+     distribuer_tuile();      // crée X.json + distribue 14 tuiles
+  */
     Joueur j;
     strcpy(j.chevalet, "1.json");  // tester sur le joueur 2
 
