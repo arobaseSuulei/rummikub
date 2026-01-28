@@ -7,32 +7,33 @@
 #include "Tuile.h"
 
 /*------------------------------------------------------------------------------------------------------------------------------------- */
-// créer le tableau de tuiles
+// créer le tableau de tuiles avec ID
 Tuile* initialiser_tuile() {
 
-    //allouer dynamiquement la mémoire
+    // allouer dynamiquement la mémoire
     Tuile* t = malloc(MAX_TUILES * sizeof(Tuile));
 
-    if (!t){//erreur d'allocation
+    if (!t) {
         printf("Erreur d'allocation!");
         return NULL;
     } 
 
     int index = 0;
+    int id = 1;
     char couleurs[] = {'B','R','O','V'};
 
-    // on initialise les 104 tuiles ordinaire
-    for(int exemplaire = 0; exemplaire < 2; exemplaire++){ // 2 exemplaires
-        for(int valeur = 1; valeur <= 13; valeur++){ // 13 numéros
-            for(int c = 0; c < 4; c++){ // 4 couleurs
-                t[index++] = (Tuile){valeur, couleurs[c], false};
+    // on initialise les 104 tuiles ordinaires
+    for (int exemplaire = 0; exemplaire < 2; exemplaire++) {
+        for (int valeur = 1; valeur <= 13; valeur++) {
+            for (int c = 0; c < 4; c++) {
+                t[index++] = (Tuile){id++, valeur, couleurs[c], false};
             }
         }
     }
 
     // plus les 2 jokers
-    t[index++] = (Tuile){0, 'J', true};
-    t[index++] = (Tuile){0, 'J', true};
+    t[index++] = (Tuile){id++, 0, 'J', true};
+    t[index++] = (Tuile){id++, 0, 'J', true};
 
     /*--------------------------Fin tableau-----------------------------------*/
     return t;
@@ -49,7 +50,7 @@ Tuile* melanger_tuiles() {
     int nb_tuiles = MAX_TUILES;
     srand(time(NULL));
 
-    for(int i = nb_tuiles - 1; i > 0; i--){
+    for (int i = nb_tuiles - 1; i > 0; i--) {
         int j = rand() % (i + 1);
         Tuile tmp = t[i];
         t[i] = t[j];
@@ -83,7 +84,8 @@ void creer_pioche() {
     fprintf(f, "[\n");
     for (int i = 0; i < nb_tuiles; i++) {
         fprintf(f,
-            "  {\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
+            "  {\"id\":%d,\"valeur\":%d,\"couleur\":\"%c\",\"joker\":%s}%s\n",
+            t[i].id,
             t[i].valeur,
             t[i].couleur,
             t[i].joker ? "true" : "false",

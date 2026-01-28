@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 typedef struct Tuile{
+    int id;
     int valeur;     // 1..13, 0 = joker
     char couleur;   // 'B','R','O','V','J'
     bool joker;
