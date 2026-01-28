@@ -11,7 +11,7 @@ int main(void) {
      distribuer_tuile();      // crée X.json + distribue 14 tuiles
   */
     Joueur j;
-    strcpy(j.chevalet, "1.json");  // tester sur le joueur 2
+    strcpy(j.chevalet, "2.json");  // tester sur le joueur 2
 
     // Charger toutes les infos du joueur (pseudo, tour, premier_tour) depuis le fichier
     charger_joueur(&j);

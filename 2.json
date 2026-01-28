@@ -1,68 +1,8 @@
 {
 	"pseudo":	"testeur",
-	"tour":	true,
-	"premier_tour":	true,
+	"tour":	false,
+	"premier_tour":	false,
 	"tuiles":	[{
-			"id":	101,
-			"valeur":	8,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	102,
-			"valeur":	8,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	103,
-			"valeur":	8,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	104,
-			"valeur":	1,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	105,
-			"valeur":	1,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	106,
-			"valeur":	1,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	107,
-			"valeur":	6,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	108,
-			"valeur":	0,
-			"couleur":	"J",
-			"joker":	true
-		}, {
-			"id":	109,
-			"valeur":	8,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	110,
-			"valeur":	0,
-			"couleur":	"J",
-			"joker":	true
-		}, {
-			"id":	111,
-			"valeur":	10,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	112,
-			"valeur":	11,
-			"couleur":	"V",
-			"joker":	false
-		}, {
 			"id":	113,
 			"valeur":	12,
 			"couleur":	"O",
