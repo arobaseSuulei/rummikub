@@ -1,7 +1,4 @@
 [
-  {"id":71,"valeur":5,"couleur":"O","joker":false},
-  {"id":62,"valeur":3,"couleur":"R","joker":false},
-  {"id":86,"valeur":9,"couleur":"R","joker":false},
   {"id":91,"valeur":10,"couleur":"O","joker":false},
   {"id":8,"valeur":2,"couleur":"V","joker":false},
   {"id":105,"valeur":0,"couleur":"J","joker":true},
