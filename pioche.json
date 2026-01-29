@@ -1,9 +1,4 @@
 [{
-		"id":	49,
-		"valeur":	13,
-		"couleur":	"B",
-		"joker":	false
-	}, {
 		"id":	2,
 		"valeur":	1,
 		"couleur":	"R",

@@ -189,24 +189,120 @@ bool traiter_joker(Joueur* j) {
     }
     
     // 6. Vérifier si le remplacement est valide
-    // La fonction peut_recuperer_joker doit vérifier la validité
     int test_comb, test_tuile;
     if (!peut_recuperer_joker(tuile_remplacement, &test_comb, &test_tuile)) {
         printf("Cette tuile ne peut pas remplacer ce joker (combinaison invalide).\n");
         return false;
     }
     
-    // 7. Effectuer le remplacement
+    // IMPORTANT: Avant de récupérer le joker, vérifier que le joueur PEUT l'utiliser
+    printf("\n=== CONTRÔLE PRÉALABLE ===\n");
+    printf("Avant de récupérer le joker, vous devez prouver que vous pouvez l'utiliser.\n");
+    
+    // Créer une copie temporaire du chevalet avec le joker
+    Tuile chevalet_avec_joker[MAX_TUILES];
+    int nb_avec_joker = 0;
+    
+    // Copier toutes les tuiles sauf celle qui remplacera le joker
+    for (int i = 0; i < nb_tuiles; i++) {
+        if (tuiles_joueur[i].id != id_tuile_remplacement) {
+            chevalet_avec_joker[nb_avec_joker] = tuiles_joueur[i];
+            nb_avec_joker++;
+        }
+    }
+    
+    // Ajouter le joker à la copie
+    Tuile joker_simule;
+    joker_simule.id = id_joker; // ID du joker qu'on va récupérer
+    joker_simule.valeur = 0;
+    joker_simule.couleur = 'J';
+    joker_simule.joker = true;
+    chevalet_avec_joker[nb_avec_joker] = joker_simule;
+    nb_avec_joker++;
+    
+    printf("\nVotre chevalet SIMULÉ avec le joker :\n");
+    afficher_tuiles(chevalet_avec_joker, nb_avec_joker);
+    
+    // Demander au joueur de montrer une combinaison possible avec le joker
+    printf("\nMontrez-moi une combinaison que vous pourriez faire avec ce joker.\n");
+    printf("Entrez les IDs des tuiles (dont le joker %d) pour une combinaison valide : ", id_joker);
+    
+    char ligne[256];
+    if (!fgets(ligne, sizeof(ligne), stdin)) {
+        printf("Erreur de lecture.\n");
+        return false;
+    }
+    
+    // Analyser la combinaison proposée
+    int ids_proposes[MAX_TUILES], nb_ids = 0;
+    char *tok = strtok(ligne, " \n");
+    while (tok && nb_ids < MAX_TUILES) {
+        ids_proposes[nb_ids++] = atoi(tok);
+        tok = strtok(NULL, " \n");
+    }
+    
+    if (nb_ids < 3) {
+        printf("Une combinaison doit avoir au moins 3 tuiles.\n");
+        printf("Récupération du joker refusée.\n");
+        return false;
+    }
+    
+    // Vérifier que le joker est dans la combinaison proposée
+    bool joker_dans_combinaison = false;
+    for (int i = 0; i < nb_ids; i++) {
+        if (ids_proposes[i] == id_joker) {
+            joker_dans_combinaison = true;
+            break;
+        }
+    }
+    
+    if (!joker_dans_combinaison) {
+        printf("La combinaison doit inclure le joker ID %d !\n", id_joker);
+        printf("Récupération du joker refusée.\n");
+        return false;
+    }
+    
+    // Vérifier que toutes les tuiles proposées sont dans le chevalet simulé
+    Tuile combinaison_test[MAX_TUILES];
+    int nb_comb_test = 0;
+    
+    for (int i = 0; i < nb_ids; i++) {
+        bool trouve_tuile = false;
+        for (int k = 0; k < nb_avec_joker; k++) {
+            if (chevalet_avec_joker[k].id == ids_proposes[i]) {
+                combinaison_test[nb_comb_test] = chevalet_avec_joker[k];
+                nb_comb_test++;
+                trouve_tuile = true;
+                break;
+            }
+        }
+        if (!trouve_tuile) {
+            printf("Tuile ID %d non disponible dans votre chevalet.\n", ids_proposes[i]);
+            printf("Récupération du joker refusée.\n");
+            return false;
+        }
+    }
+    
+    // Vérifier si la combinaison proposée est valide
+    if (!combinaison_valide(combinaison_test, nb_comb_test)) {
+        printf("La combinaison proposée n'est pas valide.\n");
+        printf("Récupération du joker refusée.\n");
+        return false;
+    }
+    
+    printf("✅ Combinaison valide ! Vous pouvez récupérer le joker.\n");
+    
+    // 7. Effectuer le remplacement pour de vrai
     Tuile joker_recupere;
     if (!recuperer_joker(tuile_remplacement, comb_index, tuile_index, &joker_recupere)) {
         printf("Échec de la récupération du joker.\n");
         return false;
     }
     
-    printf("Joker récupéré ! Vous devez l'utiliser immédiatement.\n");
+    printf("Joker récupéré ! Vous DEVEZ l'utiliser immédiatement.\n");
     printf("Joker ID: %d\n", joker_recupere.id);
     
-    // Retirer la tuile utilisée du chevalet
+    // 8. Effectuer le remplacement réel dans le chevalet
     Tuile restantes[MAX_TUILES];
     int nb_restantes = 0;
     for (int i = 0; i < nb_tuiles; i++) {
@@ -223,18 +319,74 @@ bool traiter_joker(Joueur* j) {
     // Sauvegarder le nouveau chevalet
     sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
     
-    printf("Le joker a été ajouté à votre chevalet. Vous devez l'utiliser maintenant.\n");
-    printf("Voulez-vous jouer une combinaison avec ce joker ? (o/n) : ");
-    char reponse;
-    scanf("%c", &reponse);
+    printf("\n=== UTILISATION IMMÉDIATE DU JOKER ===\n");
+    printf("Maintenant, vous DEVEZ utiliser le joker ID %d dans une combinaison.\n", joker_recupere.id);
+    
+    // FORCER le joueur à utiliser le joker maintenant
+    bool joker_utilise = false;
+    
+    // Afficher l'état actuel
+    Tuile chevalet_actuel[MAX_TUILES];
+    int nb_actuel = 0;
+    charger_chevalet(j->chevalet, chevalet_actuel, &nb_actuel);
+    
+    printf("\nVotre chevalet ACTUEL (avec le joker) :\n");
+    afficher_tuiles(chevalet_actuel, nb_actuel);
+    
+    printf("\nTable actuelle :\n");
+    afficher_combinaisons_table();
+    
+    printf("\nOptions :\n");
+    printf("1. Jouer une combinaison qui utilise le joker\n");
+    printf("2. Ajouter le joker à une combinaison existante sur la table\n");
+    printf("Votre choix : ");
+    
+    int choix_utilisation;
+    scanf("%d", &choix_utilisation);
     getchar();
     
-    if (reponse == 'o' || reponse == 'O') {
-        // Option: forcer l'utilisation du joker
-        printf("Appel à jouer_combinaison()...\n");
+    if (choix_utilisation == 1) {
+        // Le joueur doit jouer une combinaison
+        printf("\nVous allez maintenant jouer une combinaison.\n");
+        printf("Assurez-vous d'inclure le joker ID %d dans votre combinaison.\n", joker_recupere.id);
+        
+        // Appeler jouer_combinaison
+        jouer_combinaison(j);
+        
+        // Vérifier si le joker a été utilisé
+        charger_chevalet(j->chevalet, chevalet_actuel, &nb_actuel);
+        bool joker_toujours_present = false;
+        for (int i = 0; i < nb_actuel; i++) {
+            if (chevalet_actuel[i].id == joker_recupere.id) {
+                joker_toujours_present = true;
+                break;
+            }
+        }
+        
+        if (!joker_toujours_present) {
+            printf("✅ Joker utilisé avec succès !\n");
+            joker_utilise = true;
+        } else {
+            printf("❌ Le joker n'a pas été utilisé !\n");
+            // Dans un vrai jeu, il faudrait annuler toute l'action ici
+            printf("Pour l'instant, on continue, mais c'est contraire aux règles.\n");
+        }
+    }
+    else if (choix_utilisation == 2) {
+        printf("\nFonctionnalité 'ajouter à une combinaison existante' à implémenter.\n");
+        printf("Pour l'instant, considérons que le joker est utilisé.\n");
+        joker_utilise = true;
+    }
+    else {
+        printf("Choix invalide.\n");
     }
     
-    return true;
+    if (!joker_utilise) {
+        printf("\n⚠️ ATTENTION : Le joker n'a pas été utilisé immédiatement.\n");
+        printf("Dans une partie réelle, cette action serait annulée.\n");
+    }
+    
+    return joker_utilise;
 }
 /* ------------------------------------------------------------------------- */
 // Étendre une suite
