@@ -93,9 +93,6 @@ void distribuer_tuile() {
 
 /*------------------------------------------------------------------------------------------------------------*/
 void piocher_tuile(Joueur* j) {
-    Tuile tuiles_joueur[MAX_TUILES];
-    int nb_tuiles = 0;
-
     FILE* f = fopen("pioche.json", "r");
     if (!f) return;
     fseek(f, 0, SEEK_END);
@@ -155,7 +152,6 @@ void piocher_tuile(Joueur* j) {
     free(data);
     cJSON_Delete(root);
 }
-
 /*------------------------------------------------------------------------------------------------------------------------------*/
 bool combinaison_valide(Tuile* tuiles, int nb) {
     if (nb < 3) return false;
@@ -400,6 +396,10 @@ void jouer_combinaison(Joueur* j)
     int nb_tuiles = 0;
     bool premier_tour = est_premier_tour(*j);
     int somme_cumulee = 0;
+    
+    // Variable pour stocker toutes les tuiles jouées pendant le premier tour
+    Tuile toutes_tuiles_jouees[MAX_TUILES];
+    int nb_toutes_tuiles_jouees = 0;
 
     if(premier_tour){
         cJSON *empty_array = cJSON_CreateArray();
@@ -413,7 +413,6 @@ void jouer_combinaison(Joueur* j)
 
     char ligne[256];
     while(1){
-        // TOUJOURS recharger depuis le fichier pour avoir les vraies données
         charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
         afficher_tuiles(tuiles_joueur, nb_tuiles);
 
@@ -441,6 +440,11 @@ void jouer_combinaison(Joueur* j)
             for(int i=0;i<nb_comb;i++) if(!comb[i].joker && comb[i].valeur>max_val) max_val=comb[i].valeur;
             for(int i=0;i<nb_comb;i++) somme+=comb[i].joker? max_val : comb[i].valeur;
             somme_cumulee += somme;
+
+            // Stocker ces tuiles jouées
+            for(int i=0;i<nb_comb;i++){
+                toutes_tuiles_jouees[nb_toutes_tuiles_jouees++] = comb[i];
+            }
 
             // Charger tampon.json
             cJSON *tampon = NULL;
@@ -474,14 +478,32 @@ void jouer_combinaison(Joueur* j)
             ft = fopen("tampon.json","w");
             if(ft){ fprintf(ft,"%s",str); fclose(ft); }
             free(str);
+            
+            printf("Somme cumulée = %d\n", somme_cumulee);
+            printf("Encore une combinaison ? (o/n) ");
+            fgets(ligne,sizeof(ligne),stdin);
+            if(ligne[0]=='o'||ligne[0]=='O') continue;
 
-            // RETIRER les tuiles du fichier IMMÉDIATEMENT
+            // VÉRIFICATION FINALE
+            if(somme_cumulee<30){
+                printf("Premier tour raté. Vous piochez une tuile.\n");
+                piocher_tuile(j);
+                cJSON_Delete(tampon);
+                return;
+            }
+
+            // PREMIER TOUR RÉUSSI - retirer TOUTES les tuiles jouées
+            // Recharger le chevalet complet
+            charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
+            
+            // Créer la liste des tuiles restantes (en enlevant toutes celles jouées)
             Tuile restantes[MAX_TUILES];
             int nb_restantes = 0;
+            
             for(int i=0;i<nb_tuiles;i++){
                 bool garder = true;
-                for(int k=0;k<nb_comb;k++){
-                    if(tuiles_joueur[i].id == comb[k].id){
+                for(int k=0;k<nb_toutes_tuiles_jouees;k++){
+                    if(tuiles_joueur[i].id == toutes_tuiles_jouees[k].id){
                         garder = false;
                         break;
                     }
@@ -490,21 +512,6 @@ void jouer_combinaison(Joueur* j)
                     restantes[nb_restantes] = tuiles_joueur[i];
                     nb_restantes++;
                 }
-            }
-            
-            // SAUVEGARDER DIRECTEMENT dans le fichier
-            sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
-            
-            printf("Somme cumulée = %d\n", somme_cumulee);
-            printf("Encore une combinaison ? (o/n) ");
-            fgets(ligne,sizeof(ligne),stdin);
-            if(ligne[0]=='o'||ligne[0]=='O') continue;
-
-            if(somme_cumulee<30){
-                printf("Premier tour raté.\n");
-                piocher_tuile(j);
-                cJSON_Delete(tampon);
-                return;
             }
 
             // Transférer tampon à table
@@ -539,16 +546,18 @@ void jouer_combinaison(Joueur* j)
                 }
             }
 
-            printf("Premier tour validé.\n");
+            // Sauvegarder le chevalet FINAL
             sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, true);
+            printf("Premier tour validé avec %d points !\n", somme_cumulee);
+            printf("Tuiles retirées du chevalet : %d\n", nb_toutes_tuiles_jouees);
             cJSON_Delete(tampon);
             return;
         }
 
-        // Tours suivants
+        // TOURS SUIVANTS
         ajouter_a_table(comb,nb_comb);
 
-        // RETIRER du fichier IMMÉDIATEMENT
+        // Retirer IMMÉDIATEMENT du chevalet
         Tuile restantes[MAX_TUILES];
         int nb_restantes = 0;
         for(int i=0;i<nb_tuiles;i++){
@@ -565,10 +574,10 @@ void jouer_combinaison(Joueur* j)
             }
         }
 
-        // SAUVEGARDER DIRECTEMENT
+        // Sauvegarder
         sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
         
-        printf("Combinaison posée.\n");
+        printf("Combinaison posée. %d tuiles retirées.\n", nb_comb);
         printf("Encore une ? (o/n) ");
         fgets(ligne,sizeof(ligne),stdin);
         if(ligne[0]!='o' && ligne[0]!='O') return;
