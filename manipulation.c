@@ -27,8 +27,8 @@ bool manipuler_table(Joueur* j) {
     printf("Vos tuiles :\n");
     afficher_tuiles(tuiles_joueur, nb_tuiles);
     
-    // Afficher la table
-    afficher_combinaisons_table();
+    // La table est déjà affichée par executer_option(), donc on ne la réaffiche pas ici
+    // afficher_combinaisons_table();  // SUPPRIMÉ
     
     // Demander quelle manipulation effectuer
     afficher_options_manipulation();
@@ -99,13 +99,62 @@ void afficher_options_manipulation(void) {
 bool traiter_joker(Joueur* j) {
     printf("\n=== RÉCUPÉRATION D'UN JOKER ===\n");
     
-    // Charger les tuiles du joueur
+    // 1. Afficher les jokers disponibles sur la table
+    printf("Jokers disponibles sur la table :\n");
+    int nb_comb = compter_combinaisons_table();
+    bool joker_trouve = false;
+    
+    for (int i = 0; i < nb_comb; i++) {
+        int nb_t = compter_tuiles_combinaison(i);
+        for (int k = 0; k < nb_t; k++) {
+            Tuile t;
+            obtenir_tuile_table(i, k, &t);
+            if (t.joker) {
+                printf("- Combinaison [%d], position %d : Joker ID %d\n", i, k, t.id);
+                joker_trouve = true;
+            }
+        }
+    }
+    
+    if (!joker_trouve) {
+        printf("Aucun joker sur la table.\n");
+        return false;
+    }
+    
+    // 2. Demander quel joker récupérer
+    printf("\nQuel joker voulez-vous récupérer ? (ID) : ");
+    int id_joker;
+    scanf("%d", &id_joker);
+    getchar();
+    
+    // 3. Trouver ce joker sur la table
+    int comb_index = -1, tuile_index = -1;
+    Tuile joker_sur_table;
+    bool trouve = false;
+    
+    for (int i = 0; i < nb_comb && !trouve; i++) {
+        int nb_t = compter_tuiles_combinaison(i);
+        for (int k = 0; k < nb_t && !trouve; k++) {
+            obtenir_tuile_table(i, k, &joker_sur_table);
+            if (joker_sur_table.id == id_joker && joker_sur_table.joker) {
+                comb_index = i;
+                tuile_index = k;
+                trouve = true;
+            }
+        }
+    }
+    
+    if (!trouve) {
+        printf("Joker non trouvé sur la table.\n");
+        return false;
+    }
+    
+    // 4. Afficher les tuiles du joueur
     Tuile tuiles_joueur[MAX_TUILES];
     int nb_tuiles = 0;
     charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
     
-    // Afficher les tuiles disponibles
-    printf("Vos tuiles disponibles :\n");
+    printf("\nVos tuiles disponibles :\n");
     for (int i = 0; i < nb_tuiles; i++) {
         printf("%d: %d%c%s\n", 
                tuiles_joueur[i].id,
@@ -114,41 +163,42 @@ bool traiter_joker(Joueur* j) {
                tuiles_joueur[i].joker ? " (J)" : "");
     }
     
-    // Demander quelle tuile utiliser
-    printf("\nQuelle tuile voulez-vous utiliser pour récupérer le joker ? (ID) : ");
-    int id_tuile;
-    scanf("%d", &id_tuile);
+    // 5. Demander quelle tuile utiliser pour remplacer le joker
+    printf("\nAvec quelle tuile voulez-vous remplacer ce joker ? (ID) : ");
+    int id_tuile_remplacement;
+    scanf("%d", &id_tuile_remplacement);
     getchar();
     
-    // Trouver la tuile
-    Tuile* tuile_a_utiliser = NULL;
+    // Trouver la tuile de remplacement
+    Tuile* tuile_remplacement = NULL;
     for (int i = 0; i < nb_tuiles; i++) {
-        if (tuiles_joueur[i].id == id_tuile) {
-            tuile_a_utiliser = &tuiles_joueur[i];
+        if (tuiles_joueur[i].id == id_tuile_remplacement) {
+            tuile_remplacement = &tuiles_joueur[i];
             break;
         }
     }
     
-    if (!tuile_a_utiliser) {
+    if (!tuile_remplacement) {
         printf("Tuile non trouvée dans votre chevalet.\n");
         return false;
     }
     
-    if (tuile_a_utiliser->joker) {
-        printf("Vous ne pouvez pas utiliser un joker pour récupérer un joker !\n");
+    if (tuile_remplacement->joker) {
+        printf("Vous ne pouvez pas utiliser un joker pour remplacer un joker !\n");
         return false;
     }
     
-    // Chercher un joker sur la table
-    int comb_index, tuile_index;
-    if (!peut_recuperer_joker(tuile_a_utiliser, &comb_index, &tuile_index)) {
-        printf("Aucun joker récupérable trouvé sur la table avec cette tuile.\n");
+    // 6. Vérifier si le remplacement est valide
+    // La fonction peut_recuperer_joker doit vérifier la validité
+    int test_comb, test_tuile;
+    if (!peut_recuperer_joker(tuile_remplacement, &test_comb, &test_tuile)) {
+        printf("Cette tuile ne peut pas remplacer ce joker (combinaison invalide).\n");
         return false;
     }
     
-    // Récupérer le joker
+    // 7. Effectuer le remplacement
     Tuile joker_recupere;
-    if (!recuperer_joker(tuile_a_utiliser, comb_index, tuile_index, &joker_recupere)) {
+    if (!recuperer_joker(tuile_remplacement, comb_index, tuile_index, &joker_recupere)) {
         printf("Échec de la récupération du joker.\n");
         return false;
     }
@@ -156,16 +206,11 @@ bool traiter_joker(Joueur* j) {
     printf("Joker récupéré ! Vous devez l'utiliser immédiatement.\n");
     printf("Joker ID: %d\n", joker_recupere.id);
     
-    // Le joueur doit maintenant utiliser le joker immédiatement
-    // Ajouter le joker à son chevalet temporairement
-    // Pour simplifier, on va l'ajouter directement au chevalet
-    // et demander de créer une combinaison avec
-    
     // Retirer la tuile utilisée du chevalet
     Tuile restantes[MAX_TUILES];
     int nb_restantes = 0;
     for (int i = 0; i < nb_tuiles; i++) {
-        if (tuiles_joueur[i].id != id_tuile) {
+        if (tuiles_joueur[i].id != id_tuile_remplacement) {
             restantes[nb_restantes] = tuiles_joueur[i];
             nb_restantes++;
         }
@@ -185,14 +230,12 @@ bool traiter_joker(Joueur* j) {
     getchar();
     
     if (reponse == 'o' || reponse == 'O') {
-        // Lancer la fonction pour jouer une combinaison
+        // Option: forcer l'utilisation du joker
         printf("Appel à jouer_combinaison()...\n");
-        // Note: Il faudrait une version spéciale qui force l'utilisation du joker
     }
     
     return true;
 }
-
 /* ------------------------------------------------------------------------- */
 // Étendre une suite
 bool traiter_extension_suite(Joueur* j) {

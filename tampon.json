@@ -1,0 +1,31 @@
+[[{
+			"id":	101,
+			"valeur":	8,
+			"couleur":	"R",
+			"joker":	false
+		}, {
+			"id":	102,
+			"valeur":	8,
+			"couleur":	"B",
+			"joker":	false
+		}, {
+			"id":	103,
+			"valeur":	8,
+			"couleur":	"V",
+			"joker":	false
+		}], [{
+			"id":	115,
+			"valeur":	0,
+			"couleur":	"J",
+			"joker":	true
+		}, {
+			"id":	116,
+			"valeur":	5,
+			"couleur":	"R",
+			"joker":	false
+		}, {
+			"id":	117,
+			"valeur":	5,
+			"couleur":	"B",
+			"joker":	false
+		}]]

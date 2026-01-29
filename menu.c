@@ -12,8 +12,7 @@ void afficher_menu_principal(void) {
     printf("2. Manipuler la table\n");
     printf("3. Piocher une tuile\n");
     printf("4. Afficher mon chevalet\n");
-    printf("5. Afficher la table de jeu\n");
-    printf("6. Passer mon tour\n");
+    printf("5. Passer mon tour\n");  // Déplacé de 6 à 5
     printf("0. Quitter la partie\n");
     printf("---------------------------------\n");
 }
@@ -41,7 +40,11 @@ int choisir_option_menu(void) {
 
 /* ------------------------------------------------------------------------- */
 void executer_option(int choix, Joueur* j) {
-    // MODIF: Déclarer les variables seulement quand nécessaire
+    // TOUJOURS afficher la table AVANT de demander une action
+    printf("\n=== TABLE ACTUELLE ===\n");
+    afficher_combinaisons_table();
+    printf("=======================\n");
+    
     switch(choix) {
         case 0: // Quitter
             printf("Merci d'avoir joué ! À bientôt.\n");
@@ -54,7 +57,7 @@ void executer_option(int choix, Joueur* j) {
             break;
             
         case 2: // Manipuler la table
-            printf("\n>>> MANIPULER LA TABLE\n");
+            printf("\n>>> MANIPULATION DE LA TABLE\n");
             if (!manipuler_table(j)) {
                 printf("Manipulation annulée ou échouée.\n");
             }
@@ -64,7 +67,6 @@ void executer_option(int choix, Joueur* j) {
             printf("\n>>> PIOCHE D'UNE TUILE\n");
             piocher_tuile(j);
             {
-                // MODIF: Déclarer les variables dans un bloc
                 Tuile tuiles[MAX_TUILES];
                 int nb_tuiles = 0;
                 charger_chevalet(j->chevalet, tuiles, &nb_tuiles);
@@ -75,7 +77,6 @@ void executer_option(int choix, Joueur* j) {
         case 4: // Afficher mon chevalet
             printf("\n>>> MON CHEVALET\n");
             {
-                // MODIF: Déclarer les variables dans un bloc
                 Tuile tuiles[MAX_TUILES];
                 int nb_tuiles = 0;
                 charger_chevalet(j->chevalet, tuiles, &nb_tuiles);
@@ -87,12 +88,7 @@ void executer_option(int choix, Joueur* j) {
             }
             break;
             
-        case 5: // Afficher la table de jeu
-            printf("\n>>> TABLE DE JEU\n");
-            afficher_combinaisons_table();
-            break;
-            
-        case 6: // Passer mon tour
+        case 5: // Passer mon tour (anciennement 6)
             printf("\n>>> TOUR PASSÉ\n");
             printf("Vous passez votre tour.\n");
             break;

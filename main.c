@@ -10,16 +10,16 @@ int main(void) {
     printf("=== BIENVENUE AU RUMMIKUB ===\n\n");
     
     // Initialisation
-    creer_pioche();          // crée pioche.json
+    /*creer_pioche();          // crée pioche.json
     creer_table();           // crée table.json vide
-    distribuer_tuile();    // crée X.json + distribue 14 tuiles à chaque joueur
+    distribuer_tuile(); */   // crée X.json + distribue 14 tuiles à chaque joueur
     
     // Après distribuer_tuile(), les joueurs sont créés avec leurs fichiers JSON
     // Mais nous n'avons pas d'objet Joueur en mémoire...
     
     // SOLUTION 1: Créer un joueur test comme avant
     Joueur j;
-    strcpy(j.chevalet, "2.json");  // tester sur le joueur 1
+    strcpy(j.chevalet, "1.json");  // tester sur le joueur 1
     
     // Charger toutes les infos du joueur depuis le fichier
     charger_joueur(&j);

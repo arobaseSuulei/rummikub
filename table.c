@@ -119,15 +119,39 @@ bool peut_recuperer_joker(Tuile* tuile_joueur, int* comb_index, int* tuile_index
         
         for (int j = 0; j < nb_tuiles; j++) {
             cJSON* tuile_json = cJSON_GetArrayItem(combinaison, j);
-            bool est_joker = cJSON_IsTrue(cJSON_GetObjectItem(tuile_json, "joker"));
+            if (!tuile_json) continue;
+            
+            cJSON* joker_field = cJSON_GetObjectItem(tuile_json, "joker");
+            if (!joker_field) continue;
+            
+            bool est_joker = cJSON_IsTrue(joker_field);
             
             if (est_joker) {
                 // Vérifier si la tuile du joueur peut remplacer ce joker
-                // Pour l'instant, on accepte toutes les tuiles non-joker
                 if (!tuile_joueur->joker) {
-                    *comb_index = i;
-                    *tuile_index = j;
-                    return true;
+                    // Créer un tableau de tuiles temporaire
+                    Tuile tuiles_temp[MAX_TUILES];
+                    
+                    // Copier toutes les tuiles de la combinaison
+                    for (int k = 0; k < nb_tuiles; k++) {
+                        cJSON* t = cJSON_GetArrayItem(combinaison, k);
+                        if (!t) continue;
+                        
+                        tuiles_temp[k].id = cJSON_GetObjectItem(t, "id")->valueint;
+                        tuiles_temp[k].valeur = cJSON_GetObjectItem(t, "valeur")->valueint;
+                        tuiles_temp[k].couleur = cJSON_GetObjectItem(t, "couleur")->valuestring[0];
+                        tuiles_temp[k].joker = cJSON_IsTrue(cJSON_GetObjectItem(t, "joker"));
+                    }
+                    
+                    // Remplacer le joker par la tuile du joueur
+                    tuiles_temp[j] = *tuile_joueur;
+                    
+                    // Vérifier si la combinaison est toujours valide
+                    if (combinaison_valide(tuiles_temp, nb_tuiles)) {
+                        *comb_index = i;
+                        *tuile_index = j;
+                        return true;
+                    }
                 }
             }
         }
@@ -135,6 +159,7 @@ bool peut_recuperer_joker(Tuile* tuile_joueur, int* comb_index, int* tuile_index
     
     return false;
 }
+
 
 bool recuperer_joker(Tuile* tuile_joueur, int comb_index, int tuile_index, Tuile* joker_recupere) {
     charger_table_en_memoire();
@@ -152,17 +177,20 @@ bool recuperer_joker(Tuile* tuile_joueur, int comb_index, int tuile_index, Tuile
     }
     
     // Vérifier que c'est bien un joker
-    bool est_joker = cJSON_IsTrue(cJSON_GetObjectItem(tuile_json, "joker"));
-    if (!est_joker) {
+    cJSON* joker_field = cJSON_GetObjectItem(tuile_json, "joker");
+    if (!joker_field || !cJSON_IsTrue(joker_field)) {
         printf("DEBUG: La tuile n'est pas un joker\n");
         return false;
     }
     
-    // Récupérer le joker
+    // Récupérer le joker (FAIRE UNE COPIE des données d'abord)
     joker_recupere->id = cJSON_GetObjectItem(tuile_json, "id")->valueint;
     joker_recupere->valeur = 0;
     joker_recupere->couleur = 'J';
     joker_recupere->joker = true;
+    
+    // SAUVEGARDER L'ANCIENNE TUILE (en créant une copie)
+    cJSON* ancienne_tuile_copie = cJSON_Duplicate(tuile_json, 1);
     
     // Créer la nouvelle tuile (remplacement du joker)
     cJSON* nouvelle_tuile = cJSON_CreateObject();
@@ -175,12 +203,23 @@ bool recuperer_joker(Tuile* tuile_joueur, int comb_index, int tuile_index, Tuile
     // Remplacer le joker par la nouvelle tuile
     cJSON_ReplaceItemInArray(combinaison, tuile_index, nouvelle_tuile);
     
-    printf("DEBUG: Remplacement effectué\n");
+    // VÉRIFICATION : La combinaison est-elle toujours valide ?
+    if (!est_combinaison_valide(comb_index)) {
+        printf("DEBUG: Combinaison invalide après remplacement. Annulation.\n");
+        // RESTAURER L'ANCIENNE TUILE dans la table en mémoire
+        cJSON_ReplaceItemInArray(combinaison, tuile_index, ancienne_tuile_copie);
+        // La nouvelle tuile n'est plus utilisée
+        cJSON_Delete(nouvelle_tuile);
+        return false;
+    }
     
-    // SAUVEGARDER SANS VALIDATION POUR TEST
+    // Si tout est bon, nettoyer l'ancienne copie
+    cJSON_Delete(ancienne_tuile_copie);
+    
+    // Sauvegarder seulement si tout est bon
     sauvegarder_table_depuis_memoire();
     
-    printf("DEBUG: Table sauvegardée\n");
+    printf("DEBUG: Remplacement effectué et validé\n");
     return true;
 }
 
