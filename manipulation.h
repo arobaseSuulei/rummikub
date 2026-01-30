@@ -15,6 +15,8 @@ bool traiter_extension_suite(Joueur* j);
 bool traiter_remplacement(Joueur* j);
 bool traiter_division(Joueur* j);
 bool traiter_retrait(Joueur* j);
+bool ajouter_tuile_combinaison_existante(Joueur* j);
+
 
 // Utilitaires
 int compter_combinaisons_table(void);

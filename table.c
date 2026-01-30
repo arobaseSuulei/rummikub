@@ -628,3 +628,98 @@ bool validation_table_complete(void) {
     
     return true;
 }
+
+bool peut_ajouter_tuile_combinaison(Tuile* tuile, int comb_index) {
+    charger_table_en_memoire();
+    
+    cJSON* combinaison = cJSON_GetArrayItem(table_json, comb_index);
+    if (!combinaison) return false;
+    
+    int nb_tuiles = cJSON_GetArraySize(combinaison);
+    if (nb_tuiles < 3) return false;
+    
+    // Créer un tableau temporaire avec toutes les tuiles + la nouvelle
+    Tuile tuiles_temp[MAX_TUILES];
+    
+    // Copier les tuiles existantes
+    for (int i = 0; i < nb_tuiles; i++) {
+        cJSON* tuile_json = cJSON_GetArrayItem(combinaison, i);
+        tuiles_temp[i].id = cJSON_GetObjectItem(tuile_json, "id")->valueint;
+        tuiles_temp[i].valeur = cJSON_GetObjectItem(tuile_json, "valeur")->valueint;
+        tuiles_temp[i].couleur = cJSON_GetObjectItem(tuile_json, "couleur")->valuestring[0];
+        tuiles_temp[i].joker = cJSON_IsTrue(cJSON_GetObjectItem(tuile_json, "joker"));
+    }
+    
+    // Ajouter la nouvelle tuile
+    tuiles_temp[nb_tuiles] = *tuile;
+    
+    // Vérifier si la combinaison est toujours valide
+    return combinaison_valide(tuiles_temp, nb_tuiles + 1);
+}
+
+bool ajouter_tuile_combinaison(Tuile* tuile, int comb_index) {
+    if (!peut_ajouter_tuile_combinaison(tuile, comb_index)) {
+        return false;
+    }
+    
+    charger_table_en_memoire();
+    cJSON* combinaison = cJSON_GetArrayItem(table_json, comb_index);
+    int nb_tuiles = cJSON_GetArraySize(combinaison);
+    
+    // Créer l'objet JSON pour la nouvelle tuile
+    cJSON* nouvelle_tuile = cJSON_CreateObject();
+    cJSON_AddNumberToObject(nouvelle_tuile, "id", tuile->id);
+    cJSON_AddNumberToObject(nouvelle_tuile, "valeur", tuile->valeur);
+    char couleur_str[2] = {tuile->couleur, 0};
+    cJSON_AddStringToObject(nouvelle_tuile, "couleur", couleur_str);
+    cJSON_AddBoolToObject(nouvelle_tuile, "joker", tuile->joker);
+    
+    // DÉTERMINER LA POSITION D'INSERTION
+    int position_insertion = nb_tuiles; // Par défaut à la fin
+    
+    if (est_combinaison_suite(comb_index) && !tuile->joker) {
+        // Pour une suite : trouver où insérer pour garder l'ordre
+        // 1. Si la tuile est plus petite que la première → insérer au début
+        cJSON* premiere_json = cJSON_GetArrayItem(combinaison, 0);
+        int premiere_valeur = cJSON_GetObjectItem(premiere_json, "valeur")->valueint;
+        char premiere_couleur = cJSON_GetObjectItem(premiere_json, "couleur")->valuestring[0];
+        
+        if (tuile->couleur == premiere_couleur && tuile->valeur < premiere_valeur) {
+            position_insertion = 0;
+        }
+        // 2. Sinon, trouver la bonne position
+        else {
+            for (int i = 0; i < nb_tuiles - 1; i++) {
+                cJSON* tuile_i = cJSON_GetArrayItem(combinaison, i);
+                cJSON* tuile_i1 = cJSON_GetArrayItem(combinaison, i + 1);
+                
+                int val_i = cJSON_GetObjectItem(tuile_i, "valeur")->valueint;
+                int val_i1 = cJSON_GetObjectItem(tuile_i1, "valeur")->valueint;
+                char couleur_i = cJSON_GetObjectItem(tuile_i, "couleur")->valuestring[0];
+                
+                if (tuile->couleur == couleur_i && 
+                    tuile->valeur > val_i && tuile->valeur < val_i1) {
+                    position_insertion = i + 1;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Insérer à la bonne position
+    if (position_insertion == nb_tuiles) {
+        cJSON_AddItemToArray(combinaison, nouvelle_tuile);
+    } else {
+        cJSON_InsertItemInArray(combinaison, position_insertion, nouvelle_tuile);
+    }
+    
+    // Vérifier que la combinaison est toujours valide
+    if (!est_combinaison_valide(comb_index)) {
+        // Annuler
+        cJSON_DeleteItemFromArray(combinaison, position_insertion);
+        return false;
+    }
+    
+    sauvegarder_table_depuis_memoire();
+    return true;
+}

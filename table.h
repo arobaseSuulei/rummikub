@@ -23,6 +23,10 @@ bool diviser_suite(int comb_index, int position);
 bool peut_retirer_tuile(int comb_index, int tuile_index);
 bool retirer_tuile(int comb_index, int tuile_index, Tuile* tuile_retiree);
 
+// Ajout d'une tuile à une combinaison existante
+bool peut_ajouter_tuile_combinaison(Tuile* tuile, int comb_index);
+bool ajouter_tuile_combinaison(Tuile* tuile, int comb_index);
+
 // Utilitaires
 int compter_combinaisons_table(void);
 bool est_combinaison_valide(int comb_index);

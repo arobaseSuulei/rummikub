@@ -1,8 +1,8 @@
+// menu.h
 #ifndef MENU_H
 #define MENU_H
 
-#include "joueur.h"
-#include "manipulation.h"
+#include "joueur.h"  // Seulement ce qui est nécessaire pour les déclarations
 
 void afficher_menu_principal(void);
 int choisir_option_menu(void);

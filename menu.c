@@ -1,3 +1,4 @@
+// menu.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,14 +6,20 @@
 #include "joueur.h"
 #include "Tuile.h"  
 #include "table.h"
+#include "manipulation.h"
+
 /* ------------------------------------------------------------------------- */
 void afficher_menu_principal(void) {
     printf("\n=== MENU PRINCIPAL - RUMMIKUB ===\n");
     printf("1. Jouer une combinaison\n");
-    printf("2. Manipuler la table\n");
-    printf("3. Piocher une tuile\n");
-    printf("4. Afficher mon chevalet\n");
-    printf("5. Passer mon tour\n");  // Déplacé de 6 à 5
+    printf("2. Récupérer un joker\n");
+    printf("3. Étendre une suite et récupérer une tuile\n");
+    printf("4. Remplacer une tuile dans une combinaison\n");
+    printf("5. Diviser une suite en deux\n");
+    printf("6. Retirer une tuile d'une combinaison\n");
+    printf("7. Piocher une tuile et passer mon tour\n");
+    printf("8. Afficher mon chevalet\n");
+    printf("9. Ajouter une tuile à une combinaison existante\n");  // NOUVEAU
     printf("0. Quitter la partie\n");
     printf("---------------------------------\n");
 }
@@ -20,30 +27,32 @@ void afficher_menu_principal(void) {
 /* ------------------------------------------------------------------------- */
 int choisir_option_menu(void) {
     int choix;
-    printf("Votre choix (0-6) : ");
+    printf("Votre choix (0-9) : ");  // Retour à 0-9
     
     while(1) {
         if (scanf("%d", &choix) != 1) {
             printf("Entrée invalide. Réessayez : ");
-            while(getchar() != '\n'); // Vider le buffer
+            while(getchar() != '\n');
             continue;
         }
         
-        if (choix >= 0 && choix <= 6) {
-            getchar(); // Consommer le newline
+        if (choix >= 0 && choix <= 9) {  // 0-9
+            getchar();
             return choix;
         }
         
-        printf("Choix invalide. Entrez un nombre entre 0 et 6 : ");
+        printf("Choix invalide. Entrez un nombre entre 0 et 9 : ");
     }
 }
 
 /* ------------------------------------------------------------------------- */
 void executer_option(int choix, Joueur* j) {
-    // TOUJOURS afficher la table AVANT de demander une action
-    printf("\n=== TABLE ACTUELLE ===\n");
-    afficher_combinaisons_table();
-    printf("=======================\n");
+    // Afficher la table avant chaque action (sauf affichage chevalet et pioche)
+    if (choix != 8 && choix != 0 && choix != 7 && choix != 9) {
+        printf("\n=== TABLE ACTUELLE ===\n");
+        afficher_combinaisons_table();
+        printf("=======================\n");
+    }
     
     switch(choix) {
         case 0: // Quitter
@@ -56,25 +65,54 @@ void executer_option(int choix, Joueur* j) {
             jouer_combinaison(j);
             break;
             
-        case 2: // Manipuler la table
-            printf("\n>>> MANIPULATION DE LA TABLE\n");
-            if (!manipuler_table(j)) {
-                printf("Manipulation annulée ou échouée.\n");
+        case 2: // Récupérer un joker
+            printf("\n>>> RÉCUPÉRATION D'UN JOKER\n");
+            if (!traiter_joker(j)) {
+                printf("Récupération du joker annulée ou échouée.\n");
             }
             break;
             
-        case 3: // Piocher une tuile
-            printf("\n>>> PIOCHE D'UNE TUILE\n");
+        case 3: // Étendre une suite
+            printf("\n>>> EXTENSION DE SUITE\n");
+            if (!traiter_extension_suite(j)) {
+                printf("Extension de suite annulée ou échouée.\n");
+            }
+            break;
+            
+        case 4: // Remplacer une tuile
+            printf("\n>>> REMPLACEMENT DE TUILE\n");
+            if (!traiter_remplacement(j)) {
+                printf("Remplacement de tuile annulé ou échoué.\n");
+            }
+            break;
+            
+        case 5: // Diviser une suite
+            printf("\n>>> DIVISION DE SUITE\n");
+            if (!traiter_division(j)) {
+                printf("Division de suite annulée ou échouée.\n");
+            }
+            break;
+            
+        case 6: // Retirer une tuile
+            printf("\n>>> RETRAIT DE TUILE\n");
+            if (!traiter_retrait(j)) {
+                printf("Retrait de tuile annulé ou échoué.\n");
+            }
+            break;
+            
+        case 7: // Piocher une tuile ET passer le tour
+            printf("\n>>> PIOCHE ET FIN DE TOUR\n");
             piocher_tuile(j);
             {
                 Tuile tuiles[MAX_TUILES];
                 int nb_tuiles = 0;
                 charger_chevalet(j->chevalet, tuiles, &nb_tuiles);
                 printf("Vous avez pioché. Vous avez maintenant %d tuiles.\n", nb_tuiles);
+                printf("Votre tour est terminé.\n");
             }
             break;
             
-        case 4: // Afficher mon chevalet
+        case 8: // Afficher mon chevalet
             printf("\n>>> MON CHEVALET\n");
             {
                 Tuile tuiles[MAX_TUILES];
@@ -88,9 +126,16 @@ void executer_option(int choix, Joueur* j) {
             }
             break;
             
-        case 5: // Passer mon tour (anciennement 6)
-            printf("\n>>> TOUR PASSÉ\n");
-            printf("Vous passez votre tour.\n");
+        case 9: // Ajouter une tuile à une combinaison existante
+            printf("\n>>> AJOUTER UNE TUILE À UNE COMBINAISON EXISTANTE\n");
+            // Afficher la table pour cette option
+            printf("\n=== TABLE ACTUELLE ===\n");
+            afficher_combinaisons_table();
+            printf("=======================\n");
+            
+            if (!ajouter_tuile_combinaison_existante(j)) {
+                printf("Ajout annulé ou échoué.\n");
+            }
             break;
             
         default:
@@ -100,7 +145,6 @@ void executer_option(int choix, Joueur* j) {
 }
 
 /* ------------------------------------------------------------------------- */
-// Fonction pour exécuter la boucle principale du jeu
 void executer_boucle_jeu(Joueur* joueurs, int nb_joueurs) {
     int joueur_actuel = 0;
     bool partie_terminee = false;
@@ -118,7 +162,6 @@ void executer_boucle_jeu(Joueur* joueurs, int nb_joueurs) {
         
         // Vérifier si le joueur a gagné (plus de tuiles)
         {
-            // MODIF: Déclarer les variables dans un bloc
             Tuile tuiles[MAX_TUILES];
             int nb_tuiles = 0;
             charger_chevalet(joueurs[joueur_actuel].chevalet, tuiles, &nb_tuiles);
@@ -136,5 +179,4 @@ void executer_boucle_jeu(Joueur* joueurs, int nb_joueurs) {
     }
     
     printf("\n=== PARTIE TERMINÉE ===\n");
-    // Ici tu pourras ajouter le calcul des scores finaux
 }

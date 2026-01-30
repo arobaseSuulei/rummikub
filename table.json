@@ -1,66 +1,82 @@
-[[{
-			"id":	1,
-			"valeur":	4,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	2,
-			"valeur":	5,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	101,
-			"valeur":	6,
-			"couleur":	"R",
-			"joker":	false
-		}], [{
-			"id":	4,
-			"valeur":	7,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	5,
-			"valeur":	7,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	6,
-			"valeur":	0,
-			"couleur":	"J",
-			"joker":	true
-		}, {
-			"id":	7,
-			"valeur":	7,
-			"couleur":	"V",
-			"joker":	false
-		}], [{
-			"id":	8,
-			"valeur":	10,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	9,
-			"valeur":	11,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	10,
-			"valeur":	12,
-			"couleur":	"B",
-			"joker":	false
-		}], [{
-			"id":	3,
-			"valeur":	0,
-			"couleur":	"J",
-			"joker":	true
-		}, {
-			"id":	103,
-			"valeur":	3,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	109,
-			"valeur":	1,
-			"couleur":	"R",
-			"joker":	false
-		}]]
+[
+  [
+    {
+      "id": 1,
+      "valeur": 5,
+      "couleur": "B",
+      "joker": false
+    },
+    {
+      "id": 2,
+      "valeur": 5,
+      "couleur": "R",
+      "joker": false
+    },
+    {
+      "id": 3,
+      "valeur": 5,
+      "couleur": "V",
+      "joker": false
+    }
+  ],
+  [
+    {
+      "id": 4,
+      "valeur": 8,
+      "couleur": "R",
+      "joker": false
+    },
+    {
+      "id": 5,
+      "valeur": 8,
+      "couleur": "V",
+      "joker": false
+    },
+    {
+      "id": 6,
+      "valeur": 8,
+      "couleur": "O",
+      "joker": false
+    }
+  ],
+  [
+    {
+      "id": 7,
+      "valeur": 2,
+      "couleur": "B",
+      "joker": false
+    },
+    {
+      "id": 8,
+      "valeur": 3,
+      "couleur": "B",
+      "joker": false
+    },
+    {
+      "id": 9,
+      "valeur": 4,
+      "couleur": "B",
+      "joker": false
+    }
+  ],
+  [
+    {
+      "id": 10,
+      "valeur": 10,
+      "couleur": "R",
+      "joker": false
+    },
+    {
+      "id": 11,
+      "valeur": 11,
+      "couleur": "R",
+      "joker": false
+    },
+    {
+      "id": 12,
+      "valeur": 12,
+      "couleur": "R",
+      "joker": false
+    }
+  ]
+]

@@ -388,68 +388,114 @@ bool traiter_joker(Joueur* j) {
     
     return joker_utilise;
 }
+
+// Dans manipulation.c
+bool ajouter_tuile_combinaison_existante(Joueur* j) {
+    printf("\n=== AJOUTER UNE TUILE À UNE COMBINAISON EXISTANTE ===\n");
+    
+    // 1. Afficher les tuiles du joueur
+    Tuile tuiles_joueur[MAX_TUILES];
+    int nb_tuiles = 0;
+    charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
+    
+    if (nb_tuiles == 0) {
+        printf("Vous n'avez plus de tuiles !\n");
+        return false;
+    }
+    
+    printf("Vos tuiles :\n");
+    afficher_tuiles(tuiles_joueur, nb_tuiles);
+    
+    // 2. Demander quelle tuile utiliser
+    printf("\nQuelle tuile voulez-vous ajouter à une combinaison ? (ID) : ");
+    int id_tuile;
+    scanf("%d", &id_tuile);
+    getchar();
+    
+    // Trouver la tuile
+    Tuile* tuile_a_ajouter = NULL;
+    for (int i = 0; i < nb_tuiles; i++) {
+        if (tuiles_joueur[i].id == id_tuile) {
+            tuile_a_ajouter = &tuiles_joueur[i];
+            break;
+        }
+    }
+    
+    if (!tuile_a_ajouter) {
+        printf("Tuile non trouvée.\n");
+        return false;
+    }
+    
+    // 3. Afficher les combinaisons sur la table
+    printf("\nCombinaisons sur la table :\n");
+    afficher_combinaisons_table();
+    
+    int nb_comb = compter_combinaisons_table();
+    if (nb_comb == 0) {
+        printf("Aucune combinaison sur la table.\n");
+        return false;
+    }
+    
+    // 4. Demander à quelle combinaison l'ajouter
+    printf("\nÀ quelle combinaison voulez-vous ajouter cette tuile ? (0-%d) : ", nb_comb-1);
+    int num_comb;
+    scanf("%d", &num_comb);
+    getchar();
+    
+    if (num_comb < 0 || num_comb >= nb_comb) {
+        printf("Numéro de combinaison invalide.\n");
+        return false;
+    }
+    
+    // 5. Vérifier si l'ajout est possible
+    if (!peut_ajouter_tuile_combinaison(tuile_a_ajouter, num_comb)) {
+        printf("Impossible d'ajouter cette tuile à cette combinaison.\n");
+        return false;
+    }
+    
+    // 6. Effectuer l'ajout
+    if (!ajouter_tuile_combinaison(tuile_a_ajouter, num_comb)) {
+        printf("Échec de l'ajout.\n");
+        return false;
+    }
+    
+    // 7. Retirer la tuile du chevalet
+    Tuile nouveau_chevalet[MAX_TUILES];
+    int nb_nouveau = 0;
+    
+    for (int i = 0; i < nb_tuiles; i++) {
+        if (tuiles_joueur[i].id != id_tuile) {
+            nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+            nb_nouveau++;
+        }
+    }
+    
+    // 8. Sauvegarder
+    sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
+    
+    printf("\n✅ Tuile ajoutée avec succès à la combinaison !\n");
+    return true;
+}
 /* ------------------------------------------------------------------------- */
 // Étendre une suite
 bool traiter_extension_suite(Joueur* j) {
     printf("\n=== EXTENSION DE SUITE ===\n");
     
-    // Charger les tuiles du joueur
+    // 1. Charger et afficher les tuiles du joueur
     Tuile tuiles_joueur[MAX_TUILES];
     int nb_tuiles = 0;
     charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
     
-    // Afficher les suites sur la table
-    printf("Suites disponibles sur la table :\n");
-    int nb_comb = compter_combinaisons_table();
-    bool suite_trouvee = false;
-    
-    for (int i = 0; i < nb_comb; i++) {
-        if (est_combinaison_suite(i)) {
-            printf("Suite [%d] : ", i);
-            int nb_t = compter_tuiles_combinaison(i);
-            for (int k = 0; k < nb_t; k++) {
-                Tuile t;
-                obtenir_tuile_table(i, k, &t);
-                if (t.joker) {
-                    printf("[J] ");
-                } else {
-                    printf("%d%c ", t.valeur, t.couleur);
-                }
-            }
-            printf("\n");
-            suite_trouvee = true;
-        }
-    }
-    
-    if (!suite_trouvee) {
-        printf("Aucune suite disponible sur la table.\n");
+    if (nb_tuiles == 0) {
+        printf("Votre chevalet est vide !\n");
         return false;
     }
     
-    // Demander quelle suite étendre
-    printf("\nQuelle suite voulez-vous étendre ? (numéro) : ");
-    int num_suite;
-    scanf("%d", &num_suite);
-    getchar();
-    
-    if (num_suite < 0 || num_suite >= nb_comb || !est_combinaison_suite(num_suite)) {
-        printf("Suite invalide.\n");
-        return false;
-    }
-    
-    // Demander à quelle extrémité
-    printf("À quelle extrémité ? (g=Gauche, d=Droite) : ");
-    char extremite;
-    scanf(" %c", &extremite);  // CORRECT
-getchar();  // Pour consommer le newline
-    
-    bool gauche = (extremite == 'g' || extremite == 'G');
-    
-    // Demander quelle tuile utiliser
     printf("Vos tuiles :\n");
     afficher_tuiles(tuiles_joueur, nb_tuiles);
     
-    printf("Quelle tuile voulez-vous utiliser ? (ID) : ");
+    // 2. Demander quelle tuile utiliser pour étendre
+    printf("\nQuelle tuile voulez-vous utiliser pour étendre une suite ? (ID) : ");
     int id_tuile;
     scanf("%d", &id_tuile);
     getchar();
@@ -464,58 +510,298 @@ getchar();  // Pour consommer le newline
     }
     
     if (!tuile_a_utiliser) {
-        printf("Tuile non trouvée.\n");
+        printf("Tuile non trouvée dans votre chevalet.\n");
         return false;
     }
     
-    // Vérifier si l'extension est possible
-    Tuile tuile_a_recuperer;
-    if (!peut_etendre_suite(tuile_a_utiliser, num_suite, gauche, &tuile_a_recuperer)) {
-        printf("Impossible d'étendre cette suite avec cette tuile.\n");
+    if (tuile_a_utiliser->joker) {
+        printf("Les jokers ne peuvent pas être utilisés pour étendre des suites.\n");
         return false;
     }
     
-    printf("Vous allez récupérer la tuile : ");
-    if (tuile_a_recuperer.joker) {
-        printf("[Joker]\n");
+    // 3. Chercher toutes les suites extensibles avec cette tuile
+    printf("\nRecherche des suites extensibles avec %d%c...\n", 
+           tuile_a_utiliser->valeur, tuile_a_utiliser->couleur);
+    
+    int nb_comb = compter_combinaisons_table();
+    int suites_trouvees[MAX_TUILES];
+    int nb_suites_trouvees = 0;
+    
+    for (int i = 0; i < nb_comb; i++) {
+        if (!est_combinaison_suite(i)) continue;
+        
+        int nb_t = compter_tuiles_combinaison(i);
+        Tuile premiere, derniere;
+        obtenir_tuile_table(i, 0, &premiere);
+        obtenir_tuile_table(i, nb_t - 1, &derniere);
+        
+        // Vérifier si on peut étendre à gauche
+        bool peut_gauche = false;
+        if (!premiere.joker && 
+            tuile_a_utiliser->couleur == premiere.couleur && 
+            tuile_a_utiliser->valeur == premiere.valeur - 1) {
+            peut_gauche = true;
+        }
+        
+        // Vérifier si on peut étendre à droite
+        bool peut_droite = false;
+        if (!derniere.joker &&
+            tuile_a_utiliser->couleur == derniere.couleur &&
+            tuile_a_utiliser->valeur == derniere.valeur + 1) {
+            peut_droite = true;
+        }
+        
+        if (peut_gauche || peut_droite) {
+            suites_trouvees[nb_suites_trouvees] = i;
+            nb_suites_trouvees++;
+        }
+    }
+    
+    if (nb_suites_trouvees == 0) {
+        printf("Aucune suite ne peut être étendue avec la tuile %d%c.\n",
+               tuile_a_utiliser->valeur, tuile_a_utiliser->couleur);
+        return false;
+    }
+    
+    // 4. Afficher les suites extensibles
+    printf("\nSuites extensibles trouvées :\n");
+    for (int i = 0; i < nb_suites_trouvees; i++) {
+        int idx = suites_trouvees[i];
+        printf("[%d] ", idx);
+        
+        int nb_t = compter_tuiles_combinaison(idx);
+        for (int k = 0; k < nb_t; k++) {
+            Tuile t;
+            obtenir_tuile_table(idx, k, &t);
+            if (t.joker) printf("[J] ");
+            else printf("%d%c ", t.valeur, t.couleur);
+        }
+        
+        // Vérifier quelles directions sont vraiment possibles
+        Tuile premiere, derniere;
+        obtenir_tuile_table(idx, 0, &premiere);
+        obtenir_tuile_table(idx, nb_t - 1, &derniere);
+        
+        bool peut_g = (!premiere.joker && tuile_a_utiliser->couleur == premiere.couleur && 
+                      tuile_a_utiliser->valeur == premiere.valeur - 1);
+        bool peut_d = (!derniere.joker && tuile_a_utiliser->couleur == derniere.couleur &&
+                      tuile_a_utiliser->valeur == derniere.valeur + 1);
+        
+        if (peut_g && peut_d) {
+            printf(" (extension à gauche OU à droite)\n");
+        } else if (peut_g) {
+            printf(" (extension à gauche seulement)\n");
+        } else {
+            printf(" (extension à droite seulement)\n");
+        }
+    }
+    
+    // 5. Demander quelle suite étendre
+    int num_suite;
+    if (nb_suites_trouvees == 1) {
+        num_suite = suites_trouvees[0];
+        printf("\nSuite unique trouvée, extension de [%d]\n", num_suite);
     } else {
-        printf("%d%c\n", tuile_a_recuperer.valeur, tuile_a_recuperer.couleur);
+        printf("\nQuelle suite voulez-vous étendre ? (numéro) : ");
+        scanf("%d", &num_suite);
+        getchar();
+        
+        // Vérifier que le numéro est valide
+        bool valide = false;
+        for (int i = 0; i < nb_suites_trouvees; i++) {
+            if (suites_trouvees[i] == num_suite) {
+                valide = true;
+                break;
+            }
+        }
+        
+        if (!valide) {
+            printf("Numéro de suite invalide.\n");
+            return false;
+        }
     }
     
-    printf("Confirmer ? (o/n) : ");
-    char confirmation;
-    scanf("%c", &confirmation);
-    getchar();
+    // 6. Déterminer la direction d'extension
+    int nb_t = compter_tuiles_combinaison(num_suite);
+    Tuile premiere, derniere;
+    obtenir_tuile_table(num_suite, 0, &premiere);
+    obtenir_tuile_table(num_suite, nb_t - 1, &derniere);
     
-    if (confirmation != 'o' && confirmation != 'O') {
-        return false;
+    bool peut_gauche = (!premiere.joker && 
+                       tuile_a_utiliser->couleur == premiere.couleur && 
+                       tuile_a_utiliser->valeur == premiere.valeur - 1);
+    
+    bool peut_droite = (!derniere.joker &&
+                       tuile_a_utiliser->couleur == derniere.couleur &&
+                       tuile_a_utiliser->valeur == derniere.valeur + 1);
+    
+    bool gauche;
+    if (peut_gauche && !peut_droite) {
+        gauche = true;
+        printf("Extension à gauche (ajout avant %d%c)\n", premiere.valeur, premiere.couleur);
+    } else if (!peut_gauche && peut_droite) {
+        gauche = false;
+        printf("Extension à droite (ajout après %d%c)\n", derniere.valeur, derniere.couleur);
+    } else {
+        // Les deux sont possibles, demander
+        printf("Deux extensions possibles :\n");
+        printf("1. À gauche : avant %d%c (vous récupérerez %d%c)\n",
+               premiere.valeur, premiere.couleur, derniere.valeur, derniere.couleur);
+        printf("2. À droite : après %d%c (vous récupérerez %d%c)\n",
+               derniere.valeur, derniere.couleur, premiere.valeur, premiere.couleur);
+        printf("Votre choix (1-2) : ");
+        
+        int choix_direction;
+        scanf("%d", &choix_direction);
+        getchar();
+        gauche = (choix_direction == 1);
     }
     
-    // Effectuer l'extension
+    // 7. Effectuer l'extension
     Tuile tuile_recuperee;
     if (!etendre_suite(tuile_a_utiliser, num_suite, gauche, &tuile_recuperee)) {
         printf("Échec de l'extension.\n");
         return false;
     }
     
-    // Retirer la tuile utilisée du chevalet
-    Tuile restantes[MAX_TUILES];
-    int nb_restantes = 0;
+    printf("\n✅ Extension réussie !\n");
+    printf("Vous avez récupéré la tuile : ");
+    if (tuile_recuperee.joker) {
+        printf("[Joker ID: %d]\n", tuile_recuperee.id);
+    } else {
+        printf("%d%c (ID: %d)\n", tuile_recuperee.valeur, tuile_recuperee.couleur, tuile_recuperee.id);
+    }
+    
+    // === RÈGLE : UTILISATION IMMÉDIATE OBLIGATOIRE ===
+    printf("\n=== UTILISATION IMMÉDIATE OBLIGATOIRE ===\n");
+    printf("Vous DEVEZ utiliser cette tuile immédiatement !\n\n");
+    
+    // 8. Préparer le nouveau chevalet temporaire
+    Tuile nouveau_chevalet[MAX_TUILES];
+    int nb_nouveau = 0;
+    
+    // Copier toutes les tuiles sauf celle utilisée pour l'extension
     for (int i = 0; i < nb_tuiles; i++) {
         if (tuiles_joueur[i].id != id_tuile) {
-            restantes[nb_restantes] = tuiles_joueur[i];
-            nb_restantes++;
+            nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+            nb_nouveau++;
         }
     }
     
-    // Ajouter la tuile récupérée au chevalet
-    restantes[nb_restantes] = tuile_recuperee;
-    nb_restantes++;
+    // Ajouter la tuile récupérée
+    nouveau_chevalet[nb_nouveau] = tuile_recuperee;
+    nb_nouveau++;
     
-    // Sauvegarder
-    sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
+    // 9. Demander comment utiliser la tuile
+    printf("Comment voulez-vous utiliser la tuile récupérée ?\n");
+    printf("Note: Vous devez l'utiliser MAINTENANT dans une combinaison valide.\n\n");
     
-    printf("Suite étendue avec succès !\n");
+    // Afficher le nouveau chevalet
+    printf("Votre chevalet actuel (avec la tuile récupérée) :\n");
+    afficher_tuiles(nouveau_chevalet, nb_nouveau);
+    
+    // Demander les tuiles pour une combinaison
+    int ids_combinaison[MAX_TUILES];
+    int nb_ids = 0;
+    char ligne[256];
+    
+    printf("\nEntrez les IDs des tuiles pour former une combinaison (minimum 3) :\n");
+    printf("(Doit ABSOLUMENT inclure la tuile ID %d que vous venez de récupérer)\n", tuile_recuperee.id);
+    
+    if (!fgets(ligne, sizeof(ligne), stdin)) {
+        printf("Erreur de lecture.\n");
+        printf("Extension annulée.\n");
+        return false;
+    }
+    
+    // Parser les IDs
+    char *token = strtok(ligne, " \n");
+    while (token != NULL && nb_ids < MAX_TUILES) {
+        int id = atoi(token);
+        
+        // Vérifier que la tuile existe dans le chevalet
+        bool trouve = false;
+        for (int i = 0; i < nb_nouveau; i++) {
+            if (nouveau_chevalet[i].id == id) {
+                ids_combinaison[nb_ids] = i; // Stocker l'index dans le tableau
+                nb_ids++;
+                trouve = true;
+                break;
+            }
+        }
+        
+        if (!trouve) {
+            printf("Tuile ID %d non trouvée dans votre chevalet.\n", id);
+        }
+        
+        token = strtok(NULL, " \n");
+    }
+    
+    // Vérifications
+    if (nb_ids < 3) {
+        printf("Combinaison trop courte. Minimum 3 tuiles.\n");
+        printf("Extension annulée.\n");
+        return false;
+    }
+    
+    // Vérifier que la tuile récupérée est incluse
+    bool inclu_tuile_recuperee = false;
+    for (int i = 0; i < nb_ids; i++) {
+        if (nouveau_chevalet[ids_combinaison[i]].id == tuile_recuperee.id) {
+            inclu_tuile_recuperee = true;
+            break;
+        }
+    }
+    
+    if (!inclu_tuile_recuperee) {
+        printf("ERREUR : La combinaison doit ABSOLUMENT inclure la tuile récupérée ID %d !\n",
+               tuile_recuperee.id);
+        printf("Extension annulée.\n");
+        return false;
+    }
+    
+    // Construire le tableau de tuiles pour la combinaison
+    Tuile combinaison[MAX_TUILES];
+    for (int i = 0; i < nb_ids; i++) {
+        combinaison[i] = nouveau_chevalet[ids_combinaison[i]];
+    }
+    
+    // Vérifier si la combinaison est valide
+    if (!combinaison_valide(combinaison, nb_ids)) {
+        printf("Combinaison invalide !\n");
+        printf("Extension annulée.\n");
+        return false;
+    }
+    
+    // 10. Ajouter la combinaison à la table
+    ajouter_a_table(combinaison, nb_ids);
+    
+    // 11. Mettre à jour le chevalet (retirer les tuiles utilisées)
+    Tuile chevalet_final[MAX_TUILES];
+    int nb_final = 0;
+    
+    for (int i = 0; i < nb_nouveau; i++) {
+        bool utilisee = false;
+        for (int k = 0; k < nb_ids; k++) {
+            if (nouveau_chevalet[i].id == nouveau_chevalet[ids_combinaison[k]].id) {
+                utilisee = true;
+                break;
+            }
+        }
+        
+        if (!utilisee) {
+            chevalet_final[nb_final] = nouveau_chevalet[i];
+            nb_final++;
+        }
+    }
+    
+    // Sauvegarder le chevalet final
+    sauvegarder_chevalet(j->chevalet, *j, chevalet_final, nb_final, false);
+    
+    printf("\n✅ Extension de suite complétée avec succès !\n");
+    printf("Nouvelle combinaison ajoutée à la table.\n");
+    printf("Tuiles utilisées : %d\n", nb_ids);
+    
     return true;
 }
 
