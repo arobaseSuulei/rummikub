@@ -19,6 +19,7 @@ bool remplacer_tuile(Tuile* tuile_joueur, int comb_index, int tuile_index, Tuile
 
 bool peut_diviser_suite(int comb_index, int position);
 bool diviser_suite(int comb_index, int position);
+bool diviser_suite_avec_ajout(int comb_index, int position, Tuile* tuile_ajout, bool ajouter_a_premiere); // AJOUT
 
 bool peut_retirer_tuile(int comb_index, int tuile_index);
 bool retirer_tuile(int comb_index, int tuile_index, Tuile* tuile_retiree);

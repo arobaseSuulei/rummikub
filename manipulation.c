@@ -833,68 +833,146 @@ bool traiter_remplacement(Joueur* j) {
 /* ------------------------------------------------------------------------- */
 // Diviser une suite
 bool traiter_division(Joueur* j) {
-    printf("\n=== DIVISION DE SUITE ===\n");
+    printf("\n=== DIVISION DE SUITE + AJOUT ===\n");
     
-    // Afficher les suites sur la table
-    printf("Suites disponibles sur la table :\n");
+    // 1. Afficher la table
+    printf("Table :\n");
+    afficher_combinaisons_table();
+    
+    // 2. Afficher le chevalet
+    Tuile tuiles_joueur[MAX_TUILES];
+    int nb_tuiles = 0;
+    charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
+    
+    printf("\nVotre chevalet :\n");
+    for (int i = 0; i < nb_tuiles; i++) {
+        printf("ID %d: %d%c", tuiles_joueur[i].id, tuiles_joueur[i].valeur, tuiles_joueur[i].couleur);
+        if (tuiles_joueur[i].joker) printf(" (Joker)");
+        printf("\n");
+    }
+    
+    // 3. Demander APRÈS QUELLE TUILE diviser (par ID)
+    printf("\nAprès quelle tuile de la table voulez-vous diviser ? (ID) : ");
+    int id_tuile_division;
+    scanf("%d", &id_tuile_division);
+    getchar();
+    
+    // Trouver cette tuile sur la table
     int nb_comb = compter_combinaisons_table();
-    bool suite_trouvee = false;
+    int comb_index = -1;
+    int position = -1;
     
     for (int i = 0; i < nb_comb; i++) {
-        if (est_combinaison_suite(i)) {
-            printf("Suite [%d] : ", i);
-            int nb_t = compter_tuiles_combinaison(i);
-            for (int k = 0; k < nb_t; k++) {
-                Tuile t;
-                obtenir_tuile_table(i, k, &t);
-                if (t.joker) {
-                    printf("[J] ");
-                } else {
-                    printf("%d%c ", t.valeur, t.couleur);
-                }
+        if (!est_combinaison_suite(i)) continue;
+        
+        int nb_t = compter_tuiles_combinaison(i);
+        for (int k = 0; k < nb_t; k++) {
+            Tuile t;
+            obtenir_tuile_table(i, k, &t);
+            if (t.id == id_tuile_division) {
+                comb_index = i;
+                position = k; // Diviser APRÈS cette position
+                break;
             }
-            printf("\n");
-            suite_trouvee = true;
+        }
+        if (comb_index != -1) break;
+    }
+    
+    if (comb_index == -1) {
+        printf("Tuile ID %d non trouvée sur la table.\n", id_tuile_division);
+        return false;
+    }
+    
+    // Vérifier que la suite est assez longue
+    int nb_t = compter_tuiles_combinaison(comb_index);
+    if (nb_t < 5) {
+        printf("Suite trop courte (min 5 tuiles).\n");
+        return false;
+    }
+    
+    // Vérifier que la position laisse assez de tuiles de chaque côté
+    // position est l'index de la tuile APRÈS laquelle on divise
+    if (position < 1 || position > nb_t - 3) {
+        printf("Division impossible : chaque partie doit avoir au moins 3 tuiles.\n");
+        return false;
+    }
+    
+    // 4. Demander quelle tuile ajouter
+    printf("\nQuelle tuile de votre chevalet ajouter ? (ID) : ");
+    int id_tuile_ajout;
+    scanf("%d", &id_tuile_ajout);
+    getchar();
+    
+    // Trouver la tuile
+    Tuile* tuile_a_ajouter = NULL;
+    for (int i = 0; i < nb_tuiles; i++) {
+        if (tuiles_joueur[i].id == id_tuile_ajout) {
+            tuile_a_ajouter = &tuiles_joueur[i];
+            break;
         }
     }
     
-    if (!suite_trouvee) {
-        printf("Aucune suite disponible sur la table.\n");
+    if (!tuile_a_ajouter) {
+        printf("Tuile non trouvée dans votre chevalet.\n");
         return false;
     }
     
-    // Demander quelle suite diviser
-    printf("\nQuelle suite voulez-vous diviser ? (numéro) : ");
-    int num_suite;
-    scanf("%d", &num_suite);
+    // 5. Demander à quelle partie ajouter
+    printf("\nÀ quelle partie ajouter la tuile ?\n");
+    printf("1. Première partie (avant la division)\n");
+    printf("2. Deuxième partie (après la division)\n");
+    printf("Choix (1-2) : ");
+    
+    int choix_partie;
+    scanf("%d", &choix_partie);
     getchar();
     
-    if (num_suite < 0 || num_suite >= nb_comb || !est_combinaison_suite(num_suite)) {
-        printf("Suite invalide.\n");
+    bool ajouter_a_premiere = (choix_partie == 1);
+    
+    // 6. Simuler et vérifier
+    Tuile partie1[MAX_TUILES];
+    Tuile partie2[MAX_TUILES];
+    int nb_partie1 = 0, nb_partie2 = 0;
+    
+    // Construire partie 1 (tuiles 0 à position)
+    for (int i = 0; i <= position; i++) {
+        Tuile t;
+        obtenir_tuile_table(comb_index, i, &t);
+        partie1[nb_partie1++] = t;
+    }
+    
+    // Construire partie 2 (tuiles position+1 à fin)
+    for (int i = position + 1; i < nb_t; i++) {
+        Tuile t;
+        obtenir_tuile_table(comb_index, i, &t);
+        partie2[nb_partie2++] = t;
+    }
+    
+    // Ajouter la nouvelle tuile
+    if (ajouter_a_premiere) {
+        partie1[nb_partie1++] = *tuile_a_ajouter;
+    } else {
+        partie2[nb_partie2++] = *tuile_a_ajouter;
+    }
+    
+    // Vérifier validité
+    if (!combinaison_valide(partie1, nb_partie1) || !combinaison_valide(partie2, nb_partie2)) {
+        printf("Division impossible : combinaisons invalides.\n");
         return false;
     }
     
-    int nb_tuiles = compter_tuiles_combinaison(num_suite);
-    
-    // Demander où diviser
-    printf("La suite a %d tuiles.\n", nb_tuiles);
-    printf("Où voulez-vous diviser ? (position 2 à %d) : ", nb_tuiles - 2);
-    int position;
-    scanf("%d", &position);
-    getchar();
-    
-    // Vérifier si la division est possible
-    if (!peut_diviser_suite(num_suite, position)) {
-        printf("Division impossible à cette position.\n");
-        printf("Chaque partie doit avoir au moins 3 tuiles.\n");
-        return false;
+    // 7. Confirmation
+    printf("\nDivision :\n");
+    printf("- Suite 1 : ");
+    for (int i = 0; i < nb_partie1; i++) {
+        printf("%d%c ", partie1[i].valeur, partie1[i].couleur);
     }
+    printf("\n- Suite 2 : ");
+    for (int i = 0; i < nb_partie2; i++) {
+        printf("%d%c ", partie2[i].valeur, partie2[i].couleur);
+    }
+    printf("\nConfirmer ? (o/n) : ");
     
-    printf("La suite sera divisée en :\n");
-    printf("- Partie 1 : tuiles 0 à %d\n", position - 1);
-    printf("- Partie 2 : tuiles %d à %d\n", position, nb_tuiles - 1);
-    
-    printf("Confirmer ? (o/n) : ");
     char confirmation;
     scanf("%c", &confirmation);
     getchar();
@@ -903,16 +981,27 @@ bool traiter_division(Joueur* j) {
         return false;
     }
     
-    // Effectuer la division
-    if (!diviser_suite(num_suite, position)) {
+    // 8. Exécuter
+    if (!diviser_suite_avec_ajout(comb_index, position, tuile_a_ajouter, ajouter_a_premiere)) {
         printf("Échec de la division.\n");
         return false;
     }
     
-    printf("Suite divisée avec succès !\n");
+    // 9. Mettre à jour le chevalet
+    Tuile nouveau_chevalet[MAX_TUILES];
+    int nb_nouveau = 0;
+    for (int i = 0; i < nb_tuiles; i++) {
+        if (tuiles_joueur[i].id != id_tuile_ajout) {
+            nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+            nb_nouveau++;
+        }
+    }
+    
+    sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
+    
+    printf("✅ Division réussie !\n");
     return true;
 }
-
 /* ------------------------------------------------------------------------- */
 // Retirer une tuile
 bool traiter_retrait(Joueur* j) {

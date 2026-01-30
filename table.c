@@ -729,3 +729,87 @@ bool ajouter_tuile_combinaison(Tuile* tuile, int comb_index) {
     sauvegarder_table_depuis_memoire();
     return true;
 }
+
+
+bool diviser_suite_avec_ajout(int comb_index, int position, Tuile* tuile_ajout, bool ajouter_a_premiere) {
+    charger_table_en_memoire();
+    
+    cJSON* combinaison = cJSON_GetArrayItem(table_json, comb_index);
+    if (!combinaison) {
+        printf("DEBUG: Combinaison %d non trouvée\n", comb_index);
+        return false;
+    }
+    
+    int nb_tuiles = cJSON_GetArraySize(combinaison);
+    printf("DEBUG: Division de %d tuiles à position %d\n", nb_tuiles, position);
+    
+    // Vérifier que position est valide
+    if (position < 0 || position >= nb_tuiles - 1) {
+        printf("DEBUG: Position invalide\n");
+        return false;
+    }
+    
+    // Créer la nouvelle tuile JSON
+    cJSON* nouvelle_tuile = cJSON_CreateObject();
+    cJSON_AddNumberToObject(nouvelle_tuile, "id", tuile_ajout->id);
+    cJSON_AddNumberToObject(nouvelle_tuile, "valeur", tuile_ajout->valeur);
+    char couleur_str[2] = {tuile_ajout->couleur, 0};
+    cJSON_AddStringToObject(nouvelle_tuile, "couleur", couleur_str);
+    cJSON_AddBoolToObject(nouvelle_tuile, "joker", tuile_ajout->joker);
+    
+    // Créer la deuxième combinaison
+    cJSON* nouvelle_combinaison = cJSON_CreateArray();
+    
+    // Déplacer les tuiles après 'position' vers la nouvelle combinaison
+    // On déplace (nb_tuiles - position - 1) éléments
+    int elements_a_deplacer = nb_tuiles - position - 1;
+    printf("DEBUG: À déplacer : %d éléments\n", elements_a_deplacer);
+    
+    for (int i = 0; i < elements_a_deplacer; i++) {
+        // Toujours prendre l'élément à position+1 (car on supprime au fur et à mesure)
+        cJSON* tuile = cJSON_GetArrayItem(combinaison, position + 1);
+        if (!tuile) {
+            printf("DEBUG: Élément %d non trouvé\n", position + 1);
+            return false;
+        }
+        
+        // Dupliquer l'élément avant de l'ajouter
+        cJSON* tuile_copie = cJSON_Duplicate(tuile, 1);
+        cJSON_AddItemToArray(nouvelle_combinaison, tuile_copie);
+        
+        // Supprimer l'original
+        cJSON_DeleteItemFromArray(combinaison, position + 1);
+    }
+    
+    // Ajouter la nouvelle tuile à la bonne combinaison
+    if (ajouter_a_premiere) {
+        // Ajouter à la fin de la première partie
+        cJSON_AddItemToArray(combinaison, nouvelle_tuile);
+        printf("DEBUG: Tuile ajoutée à la première partie\n");
+    } else {
+        // Ajouter au début de la deuxième partie
+        cJSON_InsertItemInArray(nouvelle_combinaison, 0, nouvelle_tuile);
+        printf("DEBUG: Tuile ajoutée à la deuxième partie\n");
+    }
+    
+    // Ajouter la nouvelle combinaison à la table
+    cJSON_AddItemToArray(table_json, nouvelle_combinaison);
+    
+    printf("DEBUG: Vérification des combinaisons...\n");
+    
+    // Vérifier que les deux combinaisons sont valides
+    if (!est_combinaison_valide(comb_index)) {
+        printf("DEBUG: Première combinaison invalide\n");
+        return false;
+    }
+    
+    int nouvelle_index = cJSON_GetArraySize(table_json) - 1;
+    if (!est_combinaison_valide(nouvelle_index)) {
+        printf("DEBUG: Deuxième combinaison invalide\n");
+        return false;
+    }
+    
+    sauvegarder_table_depuis_memoire();
+    printf("DEBUG: Division réussie\n");
+    return true;
+}
