@@ -160,44 +160,100 @@ bool combinaison_valide(Tuile* tuiles, int nb) {
     for (int i = 0; i < nb; i++)
         if (tuiles[i].joker) jokers++;
 
+    // === VÉRIFICATION BRELAN ===
     int valeur_set = -1;
     bool possible_set = true;
-    char couleurs[nb];
+    char couleurs[4]; // MAX 4 couleurs différentes pour un brelan (B, R, O, V)
     int couleur_count = 0;
 
     for (int i = 0; i < nb; i++) {
         if (tuiles[i].joker) continue;
-        if (valeur_set == -1) valeur_set = tuiles[i].valeur;
-        else if (tuiles[i].valeur != valeur_set) { possible_set=false; break; }
-        for (int j=0;j<couleur_count;j++) if(couleurs[j]==tuiles[i].couleur){ possible_set=false; break;}
-        if(!possible_set) break;
-        couleurs[couleur_count++] = tuiles[i].couleur;
+        
+        if (valeur_set == -1) {
+            valeur_set = tuiles[i].valeur;
+        } else if (tuiles[i].valeur != valeur_set) { 
+            possible_set = false; 
+            break; 
+        }
+        
+        // Vérifier doublon de couleur
+        bool couleur_deja_presente = false;
+        for (int j = 0; j < couleur_count; j++) {
+            if (couleurs[j] == tuiles[i].couleur) {
+                couleur_deja_presente = true;
+                break;
+            }
+        }
+        
+        if (couleur_deja_presente) {
+            possible_set = false;
+            break;
+        }
+        
+        // Ajouter la couleur si pas déjà présente
+        if (couleur_count < 4) {
+            couleurs[couleur_count++] = tuiles[i].couleur;
+        } else {
+            possible_set = false; // Plus de 4 couleurs différentes
+            break;
+        }
     }
 
-    if(possible_set) return true;
-
-    if(nb-jokers<2) return false;
-
-    char couleur_suite='\0';
-    int valeurs[nb-jokers];
-    int v_idx=0;
-    for(int i=0;i<nb;i++){
-        if(tuiles[i].joker) continue;
-        if(couleur_suite=='\0') couleur_suite=tuiles[i].couleur;
-        else if(tuiles[i].couleur!=couleur_suite) return false;
-        valeurs[v_idx++]=tuiles[i].valeur;
+    // Si c'est un brelan possible, vérifier le nombre total de tuiles
+    if (possible_set) {
+        // Un brelan ne peut pas avoir plus de 4 tuiles au total
+        // (3-4 tuiles normales + éventuellement jokers)
+        if (nb <= 4) {
+            return true;
+        }
+        // Si plus de 4 tuiles, ce n'est pas un brelan valide
+        possible_set = false;
     }
 
-    for(int i=0;i<v_idx-1;i++)
-        for(int j=i+1;j<v_idx;j++)
-            if(valeurs[i]>valeurs[j]){int tmp=valeurs[i]; valeurs[i]=valeurs[j]; valeurs[j]=tmp;}
+    // === VÉRIFICATION SUITE ===
+    // Si pas assez de tuiles non-jokers pour une suite
+    if (nb - jokers < 2) return false;
 
-    for(int i=0;i<v_idx-1;i++) if(valeurs[i]==valeurs[i+1]) return false;
+    char couleur_suite = '\0';
+    int valeurs[nb - jokers];
+    int v_idx = 0;
+    
+    for (int i = 0; i < nb; i++) {
+        if (tuiles[i].joker) continue;
+        
+        if (couleur_suite == '\0') {
+            couleur_suite = tuiles[i].couleur;
+        } else if (tuiles[i].couleur != couleur_suite) {
+            return false; // Couleurs différentes
+        }
+        
+        valeurs[v_idx++] = tuiles[i].valeur;
+    }
 
-    int gaps=0;
-    for(int i=0;i<v_idx-1;i++) gaps+=valeurs[i+1]-valeurs[i]-1;
+    // Trier les valeurs
+    for (int i = 0; i < v_idx - 1; i++) {
+        for (int j = i + 1; j < v_idx; j++) {
+            if (valeurs[i] > valeurs[j]) {
+                int tmp = valeurs[i];
+                valeurs[i] = valeurs[j];
+                valeurs[j] = tmp;
+            }
+        }
+    }
 
-    return (gaps<=jokers);
+    // Vérifier les doublons
+    for (int i = 0; i < v_idx - 1; i++) {
+        if (valeurs[i] == valeurs[i + 1]) return false;
+    }
+
+    // Calculer les "trous" dans la suite
+    int gaps = 0;
+    for (int i = 0; i < v_idx - 1; i++) {
+        gaps += valeurs[i + 1] - valeurs[i] - 1;
+    }
+
+    // Les jokers peuvent combler les trous
+    return (gaps <= jokers);
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------------*/
