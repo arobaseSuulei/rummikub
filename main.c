@@ -19,7 +19,7 @@ int main(void) {
     
     // SOLUTION 1: Créer un joueur test comme avant
     Joueur j;
-    strcpy(j.chevalet, "2.json");  // tester sur le joueur 1
+    strcpy(j.chevalet, "1.json");  // tester sur le joueur 1
     
     // Charger toutes les infos du joueur depuis le fichier
     charger_joueur(&j);

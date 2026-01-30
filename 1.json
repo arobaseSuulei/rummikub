@@ -2,25 +2,5 @@
 	"pseudo":	"Testeur",
 	"tour":	false,
 	"premier_tour":	false,
-	"tuiles":	[{
-			"id":	103,
-			"valeur":	9,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	104,
-			"valeur":	8,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	106,
-			"valeur":	13,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	107,
-			"valeur":	0,
-			"couleur":	"J",
-			"joker":	true
-		}]
+	"tuiles":	[]
 }

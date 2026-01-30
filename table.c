@@ -273,9 +273,14 @@ bool peut_etendre_suite(Tuile* tuile_joueur, int comb_index, bool gauche, Tuile*
 }
 
 bool etendre_suite(Tuile* tuile_joueur, int comb_index, bool gauche, Tuile* tuile_recuperee) {
-    if (!peut_etendre_suite(tuile_joueur, comb_index, gauche, tuile_recuperee)) {
+    // D'abord, vérifier si l'extension est possible et savoir quelle tuile on récupérera
+    Tuile tuile_a_recuperer_temp;
+    if (!peut_etendre_suite(tuile_joueur, comb_index, gauche, &tuile_a_recuperer_temp)) {
         return false;
     }
+    
+    // Sauvegarder la tuile qu'on va récupérer
+    *tuile_recuperee = tuile_a_recuperer_temp;
     
     charger_table_en_memoire();
     cJSON* combinaison = cJSON_GetArrayItem(table_json, comb_index);
@@ -302,7 +307,8 @@ bool etendre_suite(Tuile* tuile_joueur, int comb_index, bool gauche, Tuile* tuil
     
     // Vérifier que la combinaison est toujours valide
     if (!est_combinaison_valide(comb_index)) {
-        // Annuler (plus complexe, à implémenter)
+        // Annuler l'opération
+        // (Devrait restaurer l'état précédent, mais complexe)
         return false;
     }
     
