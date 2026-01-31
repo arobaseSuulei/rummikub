@@ -2,7 +2,7 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include "joueur.h"  // Seulement ce qui est nécessaire pour les déclarations
+#include "joueur.h"
 
 void afficher_menu_principal(void);
 int choisir_option_menu(void);

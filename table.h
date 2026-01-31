@@ -14,19 +14,10 @@ bool recuperer_joker(Tuile* tuile_joueur, int comb_index, int tuile_index, Tuile
 bool peut_etendre_suite(Tuile* tuile_joueur, int comb_index, bool gauche, Tuile* tuile_a_recuperer);
 bool etendre_suite(Tuile* tuile_joueur, int comb_index, bool gauche, Tuile* tuile_recuperee);
 
-bool peut_remplacer_tuile(Tuile* tuile_joueur, int comb_index, int tuile_index);
-bool remplacer_tuile(Tuile* tuile_joueur, int comb_index, int tuile_index, Tuile* ancienne_tuile);
-
-bool peut_diviser_suite(int comb_index, int position);
-bool diviser_suite(int comb_index, int position);
-bool diviser_suite_avec_ajout(int comb_index, int position, Tuile* tuile_ajout, bool ajouter_a_premiere); // AJOUT
-
-bool peut_retirer_tuile(int comb_index, int tuile_index);
-bool retirer_tuile(int comb_index, int tuile_index, Tuile* tuile_retiree);
-
-// Ajout d'une tuile à une combinaison existante
 bool peut_ajouter_tuile_combinaison(Tuile* tuile, int comb_index);
 bool ajouter_tuile_combinaison(Tuile* tuile, int comb_index);
+
+bool diviser_suite_avec_ajout(int comb_index, int position, Tuile* tuile_ajout, bool ajouter_a_premiere);
 
 // Utilitaires
 int compter_combinaisons_table(void);

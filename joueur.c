@@ -163,7 +163,7 @@ bool combinaison_valide(Tuile* tuiles, int nb) {
     // === VÉRIFICATION BRELAN ===
     int valeur_set = -1;
     bool possible_set = true;
-    char couleurs[4]; // MAX 4 couleurs différentes pour un brelan (B, R, O, V)
+    char couleurs[4];
     int couleur_count = 0;
 
     for (int i = 0; i < nb; i++) {
@@ -218,6 +218,7 @@ bool combinaison_valide(Tuile* tuiles, int nb) {
     int valeurs[nb - jokers];
     int v_idx = 0;
     
+    // Première passe : collecter les valeurs non-jokers
     for (int i = 0; i < nb; i++) {
         if (tuiles[i].joker) continue;
         
@@ -244,6 +245,61 @@ bool combinaison_valide(Tuile* tuiles, int nb) {
     // Vérifier les doublons
     for (int i = 0; i < v_idx - 1; i++) {
         if (valeurs[i] == valeurs[i + 1]) return false;
+    }
+
+    // === NOUVELLE VÉRIFICATION : Position des jokers ===
+    // Créer un tableau complet avec les positions des jokers
+    int positions_jokers[jokers];
+    int joker_idx = 0;
+    
+    for (int i = 0; i < nb; i++) {
+        if (tuiles[i].joker) {
+            positions_jokers[joker_idx++] = i;
+        }
+    }
+    
+    // Pour chaque joker, vérifier qu'il ne crée pas de problème
+    for (int j = 0; j < jokers; j++) {
+        int pos_joker = positions_jokers[j];
+        
+        // Trouver la valeur précédente non-joker
+        int val_prev = -1;
+        for (int i = pos_joker - 1; i >= 0; i--) {
+            if (!tuiles[i].joker) {
+                val_prev = tuiles[i].valeur;
+                break;
+            }
+        }
+        
+        // Trouver la valeur suivante non-joker
+        int val_next = -1;
+        for (int i = pos_joker + 1; i < nb; i++) {
+            if (!tuiles[i].joker) {
+                val_next = tuiles[i].valeur;
+                break;
+            }
+        }
+        
+        // Vérification des cas problématiques
+        if (val_prev == -1 && val_next == -1) {
+            // Que des jokers
+            continue;
+        }
+        
+        if (val_prev == -1) {
+            // Joker en première position
+            if (val_next == 1) return false; // Joker avant un 1
+        }
+        
+        if (val_next == -1) {
+            // Joker en dernière position
+            if (val_prev == 13) return false; // Joker après un 13
+        }
+        
+        if (val_prev != -1 && val_next != -1) {
+            // Joker entre deux valeurs
+            if (val_next - val_prev == 1) return false; // Entre deux consécutifs
+        }
     }
 
     // Calculer les "trous" dans la suite

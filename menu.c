@@ -13,13 +13,10 @@ void afficher_menu_principal(void) {
     printf("\n=== MENU PRINCIPAL - RUMMIKUB ===\n");
     printf("1. Jouer une combinaison\n");
     printf("2. Récupérer un joker\n");
-    printf("3. Étendre une suite et récupérer une tuile\n");
-    printf("4. Remplacer une tuile dans une combinaison\n");
-    printf("5. Diviser une suite en deux\n");
-    printf("6. Retirer une tuile d'une combinaison\n");
-    printf("7. Piocher une tuile et passer mon tour\n");
-    printf("8. Afficher mon chevalet\n");
-    printf("9. Ajouter une tuile à une combinaison existante\n");  // NOUVEAU
+    printf("3. Ajouter une tuile à une combinaison existante\n");
+    printf("4. Piocher une tuile et passer mon tour\n");
+    printf("5. Afficher mon chevalet\n");
+    printf("6. Diviser une suite en deux\n");
     printf("0. Quitter la partie\n");
     printf("---------------------------------\n");
 }
@@ -27,7 +24,7 @@ void afficher_menu_principal(void) {
 /* ------------------------------------------------------------------------- */
 int choisir_option_menu(void) {
     int choix;
-    printf("Votre choix (0-9) : ");  // Retour à 0-9
+    printf("Votre choix (0-6) : ");  // CHANGÉ : 0-8 → 0-6
     
     while(1) {
         if (scanf("%d", &choix) != 1) {
@@ -36,19 +33,19 @@ int choisir_option_menu(void) {
             continue;
         }
         
-        if (choix >= 0 && choix <= 9) {  // 0-9
+        if (choix >= 0 && choix <= 6) {  // CHANGÉ : 0-8 → 0-6
             getchar();
             return choix;
         }
         
-        printf("Choix invalide. Entrez un nombre entre 0 et 9 : ");
+        printf("Choix invalide. Entrez un nombre entre 0 et 6 : ");  // CHANGÉ
     }
 }
 
 /* ------------------------------------------------------------------------- */
 void executer_option(int choix, Joueur* j) {
     // Afficher la table avant chaque action (sauf affichage chevalet et pioche)
-    if (choix != 8 && choix != 0 && choix != 7 && choix != 9) {
+    if (choix != 5 && choix != 0 && choix != 4) {
         printf("\n=== TABLE ACTUELLE ===\n");
         afficher_combinaisons_table();
         printf("=======================\n");
@@ -72,35 +69,14 @@ void executer_option(int choix, Joueur* j) {
             }
             break;
             
-        case 3: // Étendre une suite
-            printf("\n>>> EXTENSION DE SUITE\n");
-            if (!traiter_extension_suite(j)) {
-                printf("Extension de suite annulée ou échouée.\n");
+        case 3: // Ajouter à une combinaison existante
+            printf("\n>>> AJOUTER À UNE COMBINAISON EXISTANTE\n");
+            if (!ajouter_tuile_combinaison_existante(j)) {
+                printf("Ajout annulé ou échoué.\n");
             }
             break;
             
-        case 4: // Remplacer une tuile
-            printf("\n>>> REMPLACEMENT DE TUILE\n");
-            if (!traiter_remplacement(j)) {
-                printf("Remplacement de tuile annulé ou échoué.\n");
-            }
-            break;
-            
-        case 5: // Diviser une suite
-            printf("\n>>> DIVISION DE SUITE\n");
-            if (!traiter_division(j)) {
-                printf("Division de suite annulée ou échouée.\n");
-            }
-            break;
-            
-        case 6: // Retirer une tuile
-            printf("\n>>> RETRAIT DE TUILE\n");
-            if (!traiter_retrait(j)) {
-                printf("Retrait de tuile annulé ou échoué.\n");
-            }
-            break;
-            
-        case 7: // Piocher une tuile ET passer le tour
+        case 4: // Piocher une tuile ET passer le tour
             printf("\n>>> PIOCHE ET FIN DE TOUR\n");
             piocher_tuile(j);
             {
@@ -112,7 +88,7 @@ void executer_option(int choix, Joueur* j) {
             }
             break;
             
-        case 8: // Afficher mon chevalet
+        case 5: // Afficher mon chevalet
             printf("\n>>> MON CHEVALET\n");
             {
                 Tuile tuiles[MAX_TUILES];
@@ -126,18 +102,14 @@ void executer_option(int choix, Joueur* j) {
             }
             break;
             
-        case 9: // Ajouter une tuile à une combinaison existante
-            printf("\n>>> AJOUTER UNE TUILE À UNE COMBINAISON EXISTANTE\n");
-            // Afficher la table pour cette option
-            printf("\n=== TABLE ACTUELLE ===\n");
-            afficher_combinaisons_table();
-            printf("=======================\n");
-            
-            if (!ajouter_tuile_combinaison_existante(j)) {
-                printf("Ajout annulé ou échoué.\n");
+        case 6: // Diviser une suite
+            printf("\n>>> DIVISION DE SUITE\n");
+            if (!traiter_division(j)) {
+                printf("Division de suite annulée ou échouée.\n");
             }
             break;
             
+        // SUPPRIMER LES CAS 7 ET 8
         default:
             printf("Option non reconnue.\n");
             break;

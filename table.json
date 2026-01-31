@@ -1,31 +1,34 @@
-[[{
-			"id":	1,
-			"valeur":	4,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	2,
-			"valeur":	5,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	106,
-			"valeur":	6,
-			"couleur":	"R",
-			"joker":	false
-		}], [{
-			"id":	3,
-			"valeur":	6,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	4,
-			"valeur":	7,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	5,
-			"valeur":	8,
-			"couleur":	"R",
-			"joker":	false
-		}]]
+[
+  [
+    {
+      "id": 1,
+      "valeur": 1,
+      "couleur": "B",
+      "joker": false
+    },
+    {
+      "id": 2,
+      "valeur": 0,
+      "couleur": "J",
+      "joker": true
+    },
+    {
+      "id": 3,
+      "valeur": 3,
+      "couleur": "B",
+      "joker": false
+    },
+    {
+      "id": 4,
+      "valeur": 4,
+      "couleur": "B",
+      "joker": false
+    },
+    {
+      "id": 5,
+      "valeur": 5,
+      "couleur": "B",
+      "joker": false
+    }
+  ]
+]

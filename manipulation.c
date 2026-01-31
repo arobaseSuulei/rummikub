@@ -9,90 +9,6 @@
 #include "table.h"
 #include "manipulation.h"
 
-/* ------------------------------------------------------------------------- */
-// Fonction principale pour manipuler la table
-bool manipuler_table(Joueur* j) {
-    printf("\n=== MANIPULATION DE LA TABLE ===\n");
-    
-    // Afficher d'abord les tuiles du joueur
-    Tuile tuiles_joueur[MAX_TUILES];
-    int nb_tuiles = 0;
-    charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
-    
-    if (nb_tuiles == 0) {
-        printf("Vous n'avez plus de tuiles !\n");
-        return false;
-    }
-    
-    printf("Vos tuiles :\n");
-    afficher_tuiles(tuiles_joueur, nb_tuiles);
-    
-    // La table est déjà affichée par executer_option(), donc on ne la réaffiche pas ici
-    // afficher_combinaisons_table();  // SUPPRIMÉ
-    
-    // Demander quelle manipulation effectuer
-    afficher_options_manipulation();
-    
-    int choix;
-    printf("Votre choix (1-5, 0 pour annuler) : ");
-    scanf("%d", &choix);
-    getchar(); // Consommer le newline
-    
-    bool succes = false;
-    
-    switch(choix) {
-        case 0:
-            printf("Manipulation annulée.\n");
-            return false;
-            
-        case 1:
-            succes = traiter_joker(j);
-            break;
-            
-        case 2:
-            succes = traiter_extension_suite(j);
-            break;
-            
-        case 3:
-            succes = traiter_remplacement(j);
-            break;
-            
-        case 4:
-            succes = traiter_division(j);
-            break;
-            
-        case 5:
-            succes = traiter_retrait(j);
-            break;
-            
-        default:
-            printf("Choix invalide.\n");
-            return false;
-    }
-    
-    if (succes) {
-        // Vérifier que toutes les combinaisons sont toujours valides
-        if (!validation_table_complete()) {
-            printf("ERREUR : La manipulation a créé des combinaisons invalides !\n");
-            // Il faudrait annuler la manipulation ici
-            return false;
-        }
-        printf("Manipulation réussie !\n");
-    }
-    
-    return succes;
-}
-
-/* ------------------------------------------------------------------------- */
-void afficher_options_manipulation(void) {
-    printf("\nOptions de manipulation :\n");
-    printf("1. Récupérer un joker\n");
-    printf("2. Étendre une suite et récupérer une tuile\n");
-    printf("3. Remplacer une tuile dans une combinaison\n");
-    printf("4. Diviser une suite en deux\n");
-    printf("5. Retirer une tuile d'une combinaison\n");
-    printf("0. Annuler / Retour\n");
-}
 
 /* ------------------------------------------------------------------------- */
 // Récupérer un joker
@@ -195,201 +111,234 @@ bool traiter_joker(Joueur* j) {
         return false;
     }
     
-    // IMPORTANT: Avant de récupérer le joker, vérifier que le joueur PEUT l'utiliser
-    printf("\n=== CONTRÔLE PRÉALABLE ===\n");
-    printf("Avant de récupérer le joker, vous devez prouver que vous pouvez l'utiliser.\n");
-    
-    // Créer une copie temporaire du chevalet avec le joker
-    Tuile chevalet_avec_joker[MAX_TUILES];
-    int nb_avec_joker = 0;
-    
-    // Copier toutes les tuiles sauf celle qui remplacera le joker
-    for (int i = 0; i < nb_tuiles; i++) {
-        if (tuiles_joueur[i].id != id_tuile_remplacement) {
-            chevalet_avec_joker[nb_avec_joker] = tuiles_joueur[i];
-            nb_avec_joker++;
-        }
+    // 7. SAUVEGARDER L'ÉTAT ACTUEL POUR POUVOIR ANNULER SI ÉCHEC
+    char* table_avant = NULL;
+    FILE* f_table = fopen("table.json", "r");
+    if (f_table) {
+        fseek(f_table, 0, SEEK_END);
+        long fsize = ftell(f_table);
+        fseek(f_table, 0, SEEK_SET);
+        table_avant = malloc(fsize + 1);
+        fread(table_avant, 1, fsize, f_table);
+        table_avant[fsize] = 0;
+        fclose(f_table);
     }
     
-    // Ajouter le joker à la copie
-    Tuile joker_simule;
-    joker_simule.id = id_joker; // ID du joker qu'on va récupérer
-    joker_simule.valeur = 0;
-    joker_simule.couleur = 'J';
-    joker_simule.joker = true;
-    chevalet_avec_joker[nb_avec_joker] = joker_simule;
-    nb_avec_joker++;
-    
-    printf("\nVotre chevalet SIMULÉ avec le joker :\n");
-    afficher_tuiles(chevalet_avec_joker, nb_avec_joker);
-    
-    // Demander au joueur de montrer une combinaison possible avec le joker
-    printf("\nMontrez-moi une combinaison que vous pourriez faire avec ce joker.\n");
-    printf("Entrez les IDs des tuiles (dont le joker %d) pour une combinaison valide : ", id_joker);
-    
-    char ligne[256];
-    if (!fgets(ligne, sizeof(ligne), stdin)) {
-        printf("Erreur de lecture.\n");
-        return false;
+    char* chevalet_avant = NULL;
+    FILE* f_chevalet = fopen(j->chevalet, "r");
+    if (f_chevalet) {
+        fseek(f_chevalet, 0, SEEK_END);
+        long fsize = ftell(f_chevalet);
+        fseek(f_chevalet, 0, SEEK_SET);
+        chevalet_avant = malloc(fsize + 1);
+        fread(chevalet_avant, 1, fsize, f_chevalet);
+        chevalet_avant[fsize] = 0;
+        fclose(f_chevalet);
     }
     
-    // Analyser la combinaison proposée
-    int ids_proposes[MAX_TUILES], nb_ids = 0;
-    char *tok = strtok(ligne, " \n");
-    while (tok && nb_ids < MAX_TUILES) {
-        ids_proposes[nb_ids++] = atoi(tok);
-        tok = strtok(NULL, " \n");
-    }
-    
-    if (nb_ids < 3) {
-        printf("Une combinaison doit avoir au moins 3 tuiles.\n");
-        printf("Récupération du joker refusée.\n");
-        return false;
-    }
-    
-    // Vérifier que le joker est dans la combinaison proposée
-    bool joker_dans_combinaison = false;
-    for (int i = 0; i < nb_ids; i++) {
-        if (ids_proposes[i] == id_joker) {
-            joker_dans_combinaison = true;
-            break;
-        }
-    }
-    
-    if (!joker_dans_combinaison) {
-        printf("La combinaison doit inclure le joker ID %d !\n", id_joker);
-        printf("Récupération du joker refusée.\n");
-        return false;
-    }
-    
-    // Vérifier que toutes les tuiles proposées sont dans le chevalet simulé
-    Tuile combinaison_test[MAX_TUILES];
-    int nb_comb_test = 0;
-    
-    for (int i = 0; i < nb_ids; i++) {
-        bool trouve_tuile = false;
-        for (int k = 0; k < nb_avec_joker; k++) {
-            if (chevalet_avec_joker[k].id == ids_proposes[i]) {
-                combinaison_test[nb_comb_test] = chevalet_avec_joker[k];
-                nb_comb_test++;
-                trouve_tuile = true;
-                break;
-            }
-        }
-        if (!trouve_tuile) {
-            printf("Tuile ID %d non disponible dans votre chevalet.\n", ids_proposes[i]);
-            printf("Récupération du joker refusée.\n");
-            return false;
-        }
-    }
-    
-    // Vérifier si la combinaison proposée est valide
-    if (!combinaison_valide(combinaison_test, nb_comb_test)) {
-        printf("La combinaison proposée n'est pas valide.\n");
-        printf("Récupération du joker refusée.\n");
-        return false;
-    }
-    
-    printf("✅ Combinaison valide ! Vous pouvez récupérer le joker.\n");
-    
-    // 7. Effectuer le remplacement pour de vrai
-    Tuile joker_recupere;
-    if (!recuperer_joker(tuile_remplacement, comb_index, tuile_index, &joker_recupere)) {
+    // 8. Effectuer le remplacement (libérer le joker)
+    Tuile joker_libre;
+    if (!recuperer_joker(tuile_remplacement, comb_index, tuile_index, &joker_libre)) {
         printf("Échec de la récupération du joker.\n");
+        if (table_avant) free(table_avant);
+        if (chevalet_avant) free(chevalet_avant);
         return false;
     }
     
-    printf("Joker récupéré ! Vous DEVEZ l'utiliser immédiatement.\n");
-    printf("Joker ID: %d\n", joker_recupere.id);
+    printf("Joker libéré ! Vous DEVEZ l'utiliser immédiatement.\n");
+    printf("Joker ID: %d\n", joker_libre.id);
     
-    // 8. Effectuer le remplacement réel dans le chevalet
-    Tuile restantes[MAX_TUILES];
-    int nb_restantes = 0;
+    // 9. RETIRER la tuile utilisée du chevalet (MAIS NE PAS AJOUTER LE JOKER)
+    Tuile nouveau_chevalet[MAX_TUILES];
+    int nb_nouveau = 0;
     for (int i = 0; i < nb_tuiles; i++) {
         if (tuiles_joueur[i].id != id_tuile_remplacement) {
-            restantes[nb_restantes] = tuiles_joueur[i];
-            nb_restantes++;
+            nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+            nb_nouveau++;
         }
     }
     
-    // Ajouter le joker au chevalet
-    restantes[nb_restantes] = joker_recupere;
-    nb_restantes++;
+    // Sauvegarder le chevalet SANS la tuile utilisée
+    sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
     
-    // Sauvegarder le nouveau chevalet
-    sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
-    
+    // 10. FORCER L'UTILISATION IMMÉDIATE DU JOKER LIBÉRÉ
     printf("\n=== UTILISATION IMMÉDIATE DU JOKER ===\n");
-    printf("Maintenant, vous DEVEZ utiliser le joker ID %d dans une combinaison.\n", joker_recupere.id);
+    printf("Vous devez utiliser le joker ID %d IMMÉDIATEMENT.\n", joker_libre.id);
+    printf("Le joker n'est PAS dans votre chevalet.\n");
     
-    // FORCER le joueur à utiliser le joker maintenant
-    bool joker_utilise = false;
+    // Afficher les combinaisons actuelles
+    printf("\nTable actuelle :\n");
+    afficher_combinaisons_table();
     
-    // Afficher l'état actuel
+    // Afficher le chevalet actuel (SANS le joker)
     Tuile chevalet_actuel[MAX_TUILES];
     int nb_actuel = 0;
     charger_chevalet(j->chevalet, chevalet_actuel, &nb_actuel);
     
-    printf("\nVotre chevalet ACTUEL (avec le joker) :\n");
+    printf("\nVotre chevalet ACTUEL (sans le joker) :\n");
     afficher_tuiles(chevalet_actuel, nb_actuel);
     
-    printf("\nTable actuelle :\n");
-    afficher_combinaisons_table();
+    // Proposer les options
+    printf("\n=== COMMENT UTILISER CE JOKER ? ===\n");
+    printf("1. Ajouter le joker à une combinaison existante sur la table\n");
+    printf("2. Jouer une nouvelle combinaison avec le joker et mes tuiles\n");
+    printf("3. Annuler et tout restaurer\n");
+    printf("Votre choix (1-3) : ");
     
-    printf("\nOptions :\n");
-    printf("1. Jouer une combinaison qui utilise le joker\n");
-    printf("2. Ajouter le joker à une combinaison existante sur la table\n");
-    printf("Votre choix : ");
-    
-    int choix_utilisation;
-    scanf("%d", &choix_utilisation);
+    int choix;
+    scanf("%d", &choix);
     getchar();
     
-    if (choix_utilisation == 1) {
-        // Le joueur doit jouer une combinaison
-        printf("\nVous allez maintenant jouer une combinaison.\n");
-        printf("Assurez-vous d'inclure le joker ID %d dans votre combinaison.\n", joker_recupere.id);
+    bool joker_utilise = false;
+    
+    if (choix == 1) {
+        // Option 1: Ajouter à une combinaison existante
+        printf("\nÀ quelle combinaison ajouter le joker ?\n");
         
-        // Appeler jouer_combinaison
-        jouer_combinaison(j);
+        int nb_comb_table = compter_combinaisons_table();
+        if (nb_comb_table == 0) {
+            printf("Aucune combinaison sur la table.\n");
+        } else {
+            printf("Choisissez une combinaison (0-%d) : ", nb_comb_table - 1);
+            int comb_choisie;
+            scanf("%d", &comb_choisie);
+            getchar();
+            
+            if (comb_choisie >= 0 && comb_choisie < nb_comb_table) {
+                // Ajouter directement le joker à la combinaison
+                if (ajouter_tuile_combinaison(&joker_libre, comb_choisie)) {
+                    printf("✅ Joker ajouté à la combinaison [%d] !\n", comb_choisie);
+                    joker_utilise = true;
+                } else {
+                    printf("❌ Impossible d'ajouter ce joker à cette combinaison.\n");
+                }
+            } else {
+                printf("Numéro de combinaison invalide.\n");
+            }
+        }
+    } else if (choix == 2) {
+        // Option 2: Jouer une nouvelle combinaison avec le joker et les tuiles du joueur
+        printf("\n=== JOUER UNE NOUVELLE COMBINAISON ===\n");
+        printf("Le joker ID %d est forcément inclus.\n", joker_libre.id);
+        printf("Quelles tuiles de votre chevalet voulez-y ajouter ? (IDs, min 2) : ");
         
-        // Vérifier si le joker a été utilisé
-        charger_chevalet(j->chevalet, chevalet_actuel, &nb_actuel);
-        bool joker_toujours_present = false;
-        for (int i = 0; i < nb_actuel; i++) {
-            if (chevalet_actuel[i].id == joker_recupere.id) {
-                joker_toujours_present = true;
-                break;
+        char ligne[256];
+        if (!fgets(ligne, sizeof(ligne), stdin)) {
+            printf("Erreur de lecture.\n");
+        } else {
+            // Analyser les IDs des tuiles additionnelles
+            int ids_proposes[MAX_TUILES], nb_ids = 0;
+            char *tok = strtok(ligne, " \n");
+            while (tok && nb_ids < MAX_TUILES) {
+                ids_proposes[nb_ids++] = atoi(tok);
+                tok = strtok(NULL, " \n");
+            }
+            
+            if (nb_ids < 2) {
+                printf("Vous devez ajouter au moins 2 tuiles au joker.\n");
+            } else {
+                // Créer le tableau de la combinaison (joker + tuiles sélectionnées)
+                Tuile combinaison[MAX_TUILES];
+                int nb_comb = 0;
+                
+                // Ajouter le joker en premier
+                combinaison[nb_comb++] = joker_libre;
+                
+                // Ajouter les tuiles sélectionnées du chevalet
+                for (int i = 0; i < nb_ids; i++) {
+                    bool trouve_tuile = false;
+                    for (int k = 0; k < nb_actuel; k++) {
+                        if (chevalet_actuel[k].id == ids_proposes[i]) {
+                            combinaison[nb_comb++] = chevalet_actuel[k];
+                            trouve_tuile = true;
+                            break;
+                        }
+                    }
+                    if (!trouve_tuile) {
+                        printf("Tuile ID %d non trouvée dans votre chevalet.\n", ids_proposes[i]);
+                        break;
+                    }
+                }
+                
+                if (nb_comb == nb_ids + 1) { // joker + toutes les tuiles trouvées
+                    // Vérifier si la combinaison est valide
+                    if (combinaison_valide(combinaison, nb_comb)) {
+                        // Ajouter la combinaison à la table
+                        ajouter_a_table(combinaison, nb_comb);
+                        
+                        // Retirer les tuiles utilisées du chevalet
+                        Tuile chevalet_final[MAX_TUILES];
+                        int nb_final = 0;
+                        
+                        for (int i = 0; i < nb_actuel; i++) {
+                            bool utilisee = false;
+                            for (int k = 0; k < nb_ids; k++) {
+                                if (chevalet_actuel[i].id == ids_proposes[k]) {
+                                    utilisee = true;
+                                    break;
+                                }
+                            }
+                            if (!utilisee) {
+                                chevalet_final[nb_final++] = chevalet_actuel[i];
+                            }
+                        }
+                        
+                        // Sauvegarder le chevalet final
+                        sauvegarder_chevalet(j->chevalet, *j, chevalet_final, nb_final, false);
+                        
+                        printf("✅ Nouvelle combinaison jouée avec succès !\n");
+                        joker_utilise = true;
+                    } else {
+                        printf("❌ La combinaison n'est pas valide.\n");
+                        printf("Joker %d + ", joker_libre.id);
+                        for (int i = 0; i < nb_ids; i++) {
+                            printf("%d ", ids_proposes[i]);
+                        }
+                        printf("= combinaison invalide.\n");
+                    }
+                }
+            }
+        }
+    }
+    
+    // 11. VÉRIFICATION FINALE ET RESTAURATION SI ÉCHEC
+    if (!joker_utilise) {
+        printf("\n⚠️  ÉCHEC : Le joker n'a pas été utilisé.\n");
+        printf("Restauration de l'état précédent...\n");
+        
+        // Restaurer la table
+        if (table_avant) {
+            FILE* f = fopen("table.json", "w");
+            if (f) {
+                fprintf(f, "%s", table_avant);
+                fclose(f);
             }
         }
         
-        if (!joker_toujours_present) {
-            printf("✅ Joker utilisé avec succès !\n");
-            joker_utilise = true;
-        } else {
-            printf("❌ Le joker n'a pas été utilisé !\n");
-            // Dans un vrai jeu, il faudrait annuler toute l'action ici
-            printf("Pour l'instant, on continue, mais c'est contraire aux règles.\n");
+        // Restaurer le chevalet (avec la tuile qu'on avait utilisée)
+        if (chevalet_avant) {
+            FILE* f = fopen(j->chevalet, "w");
+            if (f) {
+                fprintf(f, "%s", chevalet_avant);
+                fclose(f);
+            }
         }
-    }
-    else if (choix_utilisation == 2) {
-        printf("\nFonctionnalité 'ajouter à une combinaison existante' à implémenter.\n");
-        printf("Pour l'instant, considérons que le joker est utilisé.\n");
-        joker_utilise = true;
-    }
-    else {
-        printf("Choix invalide.\n");
+        
+        printf("État restauré. Récupération du joker annulée.\n");
+        
+        if (table_avant) free(table_avant);
+        if (chevalet_avant) free(chevalet_avant);
+        return false;
     }
     
-    if (!joker_utilise) {
-        printf("\n⚠️ ATTENTION : Le joker n'a pas été utilisé immédiatement.\n");
-        printf("Dans une partie réelle, cette action serait annulée.\n");
-    }
+    // 12. NETTOYAGE
+    if (table_avant) free(table_avant);
+    if (chevalet_avant) free(chevalet_avant);
     
-    return joker_utilise;
+    printf("✅ Récupération et utilisation du joker réussies !\n");
+    return true;
 }
 
-// Dans manipulation.c
 bool ajouter_tuile_combinaison_existante(Joueur* j) {
     printf("\n=== AJOUTER UNE TUILE À UNE COMBINAISON EXISTANTE ===\n");
     
@@ -447,35 +396,265 @@ bool ajouter_tuile_combinaison_existante(Joueur* j) {
         return false;
     }
     
-    // 5. Vérifier si l'ajout est possible
+    // 5. VÉRIFICATION CRITIQUE : Est-ce que l'ajout est possible ?
     if (!peut_ajouter_tuile_combinaison(tuile_a_ajouter, num_comb)) {
-        printf("Impossible d'ajouter cette tuile à cette combinaison.\n");
+        printf("❌ Impossible d'ajouter cette tuile à cette combinaison.\n");
+        printf("   La combinaison serait invalide après ajout.\n");
         return false;
     }
     
-    // 6. Effectuer l'ajout
-    if (!ajouter_tuile_combinaison(tuile_a_ajouter, num_comb)) {
-        printf("Échec de l'ajout.\n");
-        return false;
-    }
-    
-    // 7. Retirer la tuile du chevalet
-    Tuile nouveau_chevalet[MAX_TUILES];
-    int nb_nouveau = 0;
-    
-    for (int i = 0; i < nb_tuiles; i++) {
-        if (tuiles_joueur[i].id != id_tuile) {
-            nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
-            nb_nouveau++;
+    // 6. VÉRIFIER SI LA COMBINAISON CONTIENT UN JOKER
+    bool contient_joker = false;
+    int nb_t = compter_tuiles_combinaison(num_comb);
+    for (int i = 0; i < nb_t; i++) {
+        Tuile t;
+        obtenir_tuile_table(num_comb, i, &t);
+        if (t.joker) {
+            contient_joker = true;
+            break;
         }
     }
     
-    // 8. Sauvegarder
-    sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
-    
-    printf("\n✅ Tuile ajoutée avec succès à la combinaison !\n");
-    return true;
+    // 7. LOGIQUE CONDITIONNELLE
+    if (contient_joker) {
+        // CAS 1 : AVEC JOKER → Ajouter seulement
+        printf("\n⚠️  Cette combinaison contient un joker.\n");
+        printf("Vous ne pouvez pas récupérer de tuile.\n");
+        
+        // L'ajout est déjà vérifié (étape 5)
+        if (!ajouter_tuile_combinaison(tuile_a_ajouter, num_comb)) {
+            printf("Échec technique de l'ajout.\n");
+            return false;
+        }
+        
+        // Retirer la tuile du chevalet
+        Tuile nouveau_chevalet[MAX_TUILES];
+        int nb_nouveau = 0;
+        
+        for (int i = 0; i < nb_tuiles; i++) {
+            if (tuiles_joueur[i].id != id_tuile) {
+                nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+                nb_nouveau++;
+            }
+        }
+        
+        // Sauvegarder
+        sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
+        
+        printf("\n✅ Tuile ajoutée avec succès à la combinaison !\n");
+        return true;
+        
+    } else {
+        // CAS 2 : SANS JOKER
+        printf("\n✅ Cette combinaison ne contient pas de joker.\n");
+        
+        // Vérifier si c'est une suite (seulement les suites permettent la récupération)
+        if (!est_combinaison_suite(num_comb)) {
+            printf("Cette combinaison n'est pas une suite.\n");
+            printf("Ajout simple sans récupération.\n");
+            
+            // L'ajout est déjà vérifié (étape 5)
+            if (!ajouter_tuile_combinaison(tuile_a_ajouter, num_comb)) {
+                printf("Échec technique de l'ajout.\n");
+                return false;
+            }
+            
+            // Retirer la tuile du chevalet
+            Tuile nouveau_chevalet[MAX_TUILES];
+            int nb_nouveau = 0;
+            
+            for (int i = 0; i < nb_tuiles; i++) {
+                if (tuiles_joueur[i].id != id_tuile) {
+                    nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+                    nb_nouveau++;
+                }
+            }
+            
+            // Sauvegarder
+            sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
+            
+            printf("\n✅ Tuile ajoutée avec succès !\n");
+            return true;
+        }
+        
+        // C'EST UNE SUITE SANS JOKER
+        // Obtenir les tuiles aux extrémités
+        Tuile premiere, derniere;
+        obtenir_tuile_table(num_comb, 0, &premiere);
+        obtenir_tuile_table(num_comb, nb_t - 1, &derniere);
+        
+        // VÉRIFICATION SPÉCIALE POUR LES JOKERS
+        bool peut_gauche = false;
+        bool peut_droite = false;
+        
+        if (tuile_a_ajouter->joker) {
+            // Pour un joker, tester avec combinaison_valide
+            // Tester ajout à gauche
+            Tuile test_gauche[MAX_TUILES + 1];
+            test_gauche[0] = *tuile_a_ajouter;
+            for (int i = 0; i < nb_t; i++) {
+                Tuile t;
+                obtenir_tuile_table(num_comb, i, &t);
+                test_gauche[i + 1] = t;
+            }
+            peut_gauche = combinaison_valide(test_gauche, nb_t + 1);
+            
+            // Tester ajout à droite
+            Tuile test_droite[MAX_TUILES + 1];
+            for (int i = 0; i < nb_t; i++) {
+                Tuile t;
+                obtenir_tuile_table(num_comb, i, &t);
+                test_droite[i] = t;
+            }
+            test_droite[nb_t] = *tuile_a_ajouter;
+            peut_droite = combinaison_valide(test_droite, nb_t + 1);
+        } else {
+            // Pour une tuile normale
+            peut_gauche = (tuile_a_ajouter->couleur == premiere.couleur && 
+                          tuile_a_ajouter->valeur == premiere.valeur - 1);
+            
+            peut_droite = (tuile_a_ajouter->couleur == derniere.couleur &&
+                          tuile_a_ajouter->valeur == derniere.valeur + 1);
+        }
+        
+        if (!peut_gauche && !peut_droite) {
+            // Ne peut pas ajouter aux extrémités → ajout simple
+            printf("Impossible d'ajouter aux extrémités. Ajout simple sans récupération.\n");
+            
+            if (!ajouter_tuile_combinaison(tuile_a_ajouter, num_comb)) {
+                printf("Échec technique de l'ajout.\n");
+                return false;
+            }
+            
+            // Mettre à jour chevalet
+            Tuile nouveau_chevalet[MAX_TUILES];
+            int nb_nouveau = 0;
+            for (int i = 0; i < nb_tuiles; i++) {
+                if (tuiles_joueur[i].id != id_tuile) {
+                    nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+                    nb_nouveau++;
+                }
+            }
+            
+            sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
+            printf("✅ Tuile ajoutée.\n");
+            return true;
+        }
+        
+        // Peut ajouter aux extrémités → proposer la récupération
+        printf("C'est une suite. Vous pouvez récupérer la tuile à l'autre extrémité.\n");
+        printf("Voulez-vous récupérer une tuile ? (o/n) : ");
+        char choix;
+        scanf("%c", &choix);
+        getchar();
+        
+        if (choix == 'o' || choix == 'O') {
+            // Demander la direction
+            bool gauche = false;
+            if (peut_gauche && !peut_droite) {
+                gauche = true;
+            } else if (!peut_gauche && peut_droite) {
+                gauche = false;
+            } else {
+                printf("Ajouter à gauche (1) ou droite (2) ? ");
+                int dir;
+                scanf("%d", &dir);
+                getchar();
+                gauche = (dir == 1);
+            }
+            
+            // Effectuer l'extension avec récupération
+            Tuile tuile_recuperee;
+            if (!etendre_suite(tuile_a_ajouter, num_comb, gauche, &tuile_recuperee)) {
+                printf("Échec de l'extension.\n");
+                return false;
+            }
+            
+            printf("Tuile récupérée : ID %d\n", tuile_recuperee.id);
+            
+            // 8. METTRE À JOUR LE CHEVALET AVEC LA TUILE RÉCUPÉRÉE
+            Tuile nouveau_chevalet[MAX_TUILES];
+            int nb_nouveau = 0;
+            
+            // Ajouter toutes les tuiles SAUF celle utilisée pour l'extension
+            for (int i = 0; i < nb_tuiles; i++) {
+                if (tuiles_joueur[i].id != id_tuile) {
+                    nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+                    nb_nouveau++;
+                }
+            }
+            
+            // Ajouter la tuile récupérée
+            nouveau_chevalet[nb_nouveau] = tuile_recuperee;
+            nb_nouveau++;
+            
+            // Sauvegarder IMMÉDIATEMENT le nouveau chevalet
+            sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
+            
+            // 9. FORCER L'UTILISATION IMMÉDIATE DE LA TUILE RÉCUPÉRÉE
+            printf("\n=== UTILISATION IMMÉDIATE DE LA TUILE RÉCUPÉRÉE ===\n");
+            printf("Vous devez utiliser la tuile ID %d immédiatement.\n", tuile_recuperee.id);
+            
+            // Recharger pour être sûr
+            Tuile chevalet_actuel[MAX_TUILES];
+            int nb_actuel = 0;
+            charger_chevalet(j->chevalet, chevalet_actuel, &nb_actuel);
+            
+            printf("\nVotre chevalet ACTUEL (avec la tuile récupérée) :\n");
+            afficher_tuiles(chevalet_actuel, nb_actuel);
+            
+            printf("\nTable actuelle :\n");
+            afficher_combinaisons_table();
+            
+            printf("\nMaintenant, vous devez jouer une combinaison.\n");
+            printf("Assurez-vous d'inclure la tuile ID %d dans votre combinaison.\n", tuile_recuperee.id);
+            
+            // Appeler jouer_combinaison
+            jouer_combinaison(j);
+            
+            // Vérifier si la tuile a été utilisée
+            charger_chevalet(j->chevalet, chevalet_actuel, &nb_actuel);
+            bool tuile_toujours_presente = false;
+            for (int i = 0; i < nb_actuel; i++) {
+                if (chevalet_actuel[i].id == tuile_recuperee.id) {
+                    tuile_toujours_presente = true;
+                    break;
+                }
+            }
+            
+            if (!tuile_toujours_presente) {
+                printf("✅ Tuile récupérée utilisée avec succès !\n");
+                return true;
+            } else {
+                printf("❌ La tuile récupérée n'a pas été utilisée !\n");
+                printf("Pour l'instant, on continue, mais c'est contraire aux règles.\n");
+                return true;
+            }
+            
+        } else {
+            // Ajouter simplement sans récupération
+            if (!ajouter_tuile_combinaison(tuile_a_ajouter, num_comb)) {
+                printf("Échec de l'ajout.\n");
+                return false;
+            }
+            
+            // Mettre à jour chevalet
+            Tuile nouveau_chevalet[MAX_TUILES];
+            int nb_nouveau = 0;
+            for (int i = 0; i < nb_tuiles; i++) {
+                if (tuiles_joueur[i].id != id_tuile) {
+                    nouveau_chevalet[nb_nouveau] = tuiles_joueur[i];
+                    nb_nouveau++;
+                }
+            }
+            
+            sauvegarder_chevalet(j->chevalet, *j, nouveau_chevalet, nb_nouveau, false);
+            printf("✅ Tuile ajoutée sans récupération.\n");
+            return true;
+        }
+    }
 }
+
 /* ------------------------------------------------------------------------- */
 // Étendre une suite
 bool traiter_extension_suite(Joueur* j) {
@@ -718,119 +897,6 @@ bool traiter_extension_suite(Joueur* j) {
 }
 
 /* ------------------------------------------------------------------------- */
-// Remplacer une tuile
-bool traiter_remplacement(Joueur* j) {
-    printf("\n=== REMPLACEMENT DE TUILE ===\n");
-    
-    // Charger les tuiles du joueur
-    Tuile tuiles_joueur[MAX_TUILES];
-    int nb_tuiles = 0;
-    charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
-    
-    // Afficher la table
-    afficher_combinaisons_table();
-    
-    int nb_comb = compter_combinaisons_table();
-    if (nb_comb == 0) {
-        printf("Aucune combinaison sur la table.\n");
-        return false;
-    }
-    
-    // Demander quelle combinaison
-    printf("Dans quelle combinaison voulez-vous remplacer une tuile ? (0-%d) : ", nb_comb-1);
-    int num_comb;
-    scanf("%d", &num_comb);
-    getchar();
-    
-    if (num_comb < 0 || num_comb >= nb_comb) {
-        printf("Combinaison invalide.\n");
-        return false;
-    }
-    
-    // Afficher les tuiles de cette combinaison
-    printf("Tuiles de la combinaison [%d] :\n", num_comb);
-    int nb_t = compter_tuiles_combinaison(num_comb);
-    for (int i = 0; i < nb_t; i++) {
-        Tuile t;
-        obtenir_tuile_table(num_comb, i, &t);
-        printf("%d: ", i);
-        if (t.joker) {
-            printf("[Joker]\n");
-        } else {
-            printf("%d%c\n", t.valeur, t.couleur);
-        }
-    }
-    
-    // Demander quelle tuile remplacer
-    printf("Quelle tuile voulez-vous remplacer ? (0-%d) : ", nb_t-1);
-    int index_tuile;
-    scanf("%d", &index_tuile);
-    getchar();
-    
-    if (index_tuile < 0 || index_tuile >= nb_t) {
-        printf("Index invalide.\n");
-        return false;
-    }
-    
-    // Afficher les tuiles du joueur
-    printf("Vos tuiles :\n");
-    afficher_tuiles(tuiles_joueur, nb_tuiles);
-    
-    // Demander quelle tuile utiliser
-    printf("Quelle tuile voulez-vous utiliser pour le remplacement ? (ID) : ");
-    int id_tuile;
-    scanf("%d", &id_tuile);
-    getchar();
-    
-    // Trouver la tuile
-    Tuile* tuile_a_utiliser = NULL;
-    for (int i = 0; i < nb_tuiles; i++) {
-        if (tuiles_joueur[i].id == id_tuile) {
-            tuile_a_utiliser = &tuiles_joueur[i];
-            break;
-        }
-    }
-    
-    if (!tuile_a_utiliser) {
-        printf("Tuile non trouvée.\n");
-        return false;
-    }
-    
-    // Vérifier si le remplacement est possible
-    if (!peut_remplacer_tuile(tuile_a_utiliser, num_comb, index_tuile)) {
-        printf("Remplacement impossible.\n");
-        return false;
-    }
-    
-    // Effectuer le remplacement
-    Tuile ancienne_tuile;
-    if (!remplacer_tuile(tuile_a_utiliser, num_comb, index_tuile, &ancienne_tuile)) {
-        printf("Échec du remplacement.\n");
-        return false;
-    }
-    
-    // Retirer la tuile utilisée du chevalet
-    Tuile restantes[MAX_TUILES];
-    int nb_restantes = 0;
-    for (int i = 0; i < nb_tuiles; i++) {
-        if (tuiles_joueur[i].id != id_tuile) {
-            restantes[nb_restantes] = tuiles_joueur[i];
-            nb_restantes++;
-        }
-    }
-    
-    // Ajouter l'ancienne tuile au chevalet
-    restantes[nb_restantes] = ancienne_tuile;
-    nb_restantes++;
-    
-    // Sauvegarder
-    sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
-    
-    printf("Tuile remplacée avec succès !\n");
-    return true;
-}
-
-/* ------------------------------------------------------------------------- */
 // Diviser une suite
 bool traiter_division(Joueur* j) {
     printf("\n=== DIVISION DE SUITE + AJOUT ===\n");
@@ -863,9 +929,27 @@ bool traiter_division(Joueur* j) {
     int position = -1;
     
     for (int i = 0; i < nb_comb; i++) {
+        // VÉRIFICATION : La combinaison contient-elle un joker ?
+        bool contient_joker = false;
+        int nb_t = compter_tuiles_combinaison(i);
+        for (int k = 0; k < nb_t; k++) {
+            Tuile t;
+            obtenir_tuile_table(i, k, &t);
+            if (t.joker) {
+                contient_joker = true;
+                break;
+            }
+        }
+        
+        if (contient_joker) {
+            // On continue à chercher dans d'autres combinaisons
+            continue;
+        }
+        
+        // Vérifier si c'est une suite (seulement si pas de joker)
         if (!est_combinaison_suite(i)) continue;
         
-        int nb_t = compter_tuiles_combinaison(i);
+        // Chercher la tuile
         for (int k = 0; k < nb_t; k++) {
             Tuile t;
             obtenir_tuile_table(i, k, &t);
@@ -879,7 +963,8 @@ bool traiter_division(Joueur* j) {
     }
     
     if (comb_index == -1) {
-        printf("Tuile ID %d non trouvée sur la table.\n", id_tuile_division);
+        printf("Tuile ID %d non trouvée sur la table ou la combinaison contient un joker.\n", id_tuile_division);
+        printf("Division impossible sur une suite contenant un joker.\n");
         return false;
     }
     
@@ -1002,94 +1087,3 @@ bool traiter_division(Joueur* j) {
     printf("✅ Division réussie !\n");
     return true;
 }
-/* ------------------------------------------------------------------------- */
-// Retirer une tuile
-bool traiter_retrait(Joueur* j) {
-    printf("\n=== RETRAIT DE TUILE ===\n");
-    
-    // Afficher la table
-    afficher_combinaisons_table();
-    
-    int nb_comb = compter_combinaisons_table();
-    if (nb_comb == 0) {
-        printf("Aucune combinaison sur la table.\n");
-        return false;
-    }
-    
-    // Demander quelle combinaison
-    printf("De quelle combinaison voulez-vous retirer une tuile ? (0-%d) : ", nb_comb-1);
-    int num_comb;
-    scanf("%d", &num_comb);
-    getchar();
-    
-    if (num_comb < 0 || num_comb >= nb_comb) {
-        printf("Combinaison invalide.\n");
-        return false;
-    }
-    
-    int nb_t = compter_tuiles_combinaison(num_comb);
-    if (nb_t <= 3) {
-        printf("Cette combinaison n'a que %d tuiles. Impossible d'en retirer.\n", nb_t);
-        return false;
-    }
-    
-    // Afficher les tuiles
-    printf("Tuiles de la combinaison [%d] :\n", num_comb);
-    for (int i = 0; i < nb_t; i++) {
-        Tuile t;
-        obtenir_tuile_table(num_comb, i, &t);
-        printf("%d: ", i);
-        if (t.joker) {
-            printf("[Joker]\n");
-        } else {
-            printf("%d%c\n", t.valeur, t.couleur);
-        }
-    }
-    
-    // Demander quelle tuile retirer
-    printf("Quelle tuile voulez-vous retirer ? (0-%d) : ", nb_t-1);
-    int index_tuile;
-    scanf("%d", &index_tuile);
-    getchar();
-    
-    if (index_tuile < 0 || index_tuile >= nb_t) {
-        printf("Index invalide.\n");
-        return false;
-    }
-    
-    // Vérifier si le retrait est possible
-    if (!peut_retirer_tuile(num_comb, index_tuile)) {
-        printf("Retrait impossible.\n");
-        return false;
-    }
-    
-    printf("Confirmer le retrait ? (o/n) : ");
-    char confirmation;
-    scanf("%c", &confirmation);
-    getchar();
-    
-    if (confirmation != 'o' && confirmation != 'O') {
-        return false;
-    }
-    
-    // Effectuer le retrait
-    Tuile tuile_retiree;
-    if (!retirer_tuile(num_comb, index_tuile, &tuile_retiree)) {
-        printf("Échec du retrait.\n");
-        return false;
-    }
-    
-    // Ajouter la tuile retirée au chevalet du joueur
-    Tuile tuiles_joueur[MAX_TUILES];
-    int nb_tuiles = 0;
-    charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
-    
-    tuiles_joueur[nb_tuiles] = tuile_retiree;
-    nb_tuiles++;
-    
-    sauvegarder_chevalet(j->chevalet, *j, tuiles_joueur, nb_tuiles, false);
-    
-    printf("Tuile retirée avec succès et ajoutée à votre chevalet !\n");
-    return true;
-}
-
