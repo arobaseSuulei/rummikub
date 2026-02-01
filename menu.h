@@ -10,5 +10,6 @@ bool executer_option(int choix, Joueur* j);
 
 /* Menu de manipulation */
 bool menu_manipulation(Joueur* j); 
+void menu_principal(void);
 
 #endif

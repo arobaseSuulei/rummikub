@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include "joueur.h"
 
-void lancer_partie(void);
+bool  lancer_partie(void);
 bool partie_en_cours(void);
 
 #endif

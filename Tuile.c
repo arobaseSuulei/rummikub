@@ -6,7 +6,7 @@
 #include <cjson/cJSON.h>
 #include "struct.h"
 #include "Tuile.h"
-#include "joueur.h"  // Pour Joueur*
+#include "joueur.h" 
 
 /*-------------------------------------------------------------------*/
 Tuile* initialiser_tuile() {

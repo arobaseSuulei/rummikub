@@ -29,8 +29,18 @@ Joueur* charger_tous_joueurs(int nb_joueurs) {
 }
 
 /* ------------------------------------------------------------------------- */
-void lancer_partie(void) {
+bool lancer_partie(void) {
     printf("=== BIENVENUE AU RUMMIKUB ===\n\n");
+    
+    // VÉRIFICATION SI UN GAGNANT EXISTE DÉJÀ (SCORES SAUVEGARDÉS)
+    FILE* f_scores = fopen("scores.json", "r");
+    if (f_scores) {
+        fclose(f_scores);
+        printf("⚠️  La partie est déjà terminée !\n\n");
+        charger_et_afficher_scores();
+        printf("\nLancez une nouvelle partie pour rejouer.\n");
+        return false;  // ← ARRÊTER LA FONCTION ICI
+    }
     
     FILE* test = fopen("1.json", "r");
     if (!test) {
@@ -147,7 +157,7 @@ void lancer_partie(void) {
                 }
                 
                 free(players);
-                return;
+                return true;
             }
         }
         
@@ -163,7 +173,7 @@ void lancer_partie(void) {
             if (choix == 0) {
                 printf("Partie terminée.\n");
                 free(players);
-                return;
+                return true;
             }
             
             bool tour_termine = executer_option(choix, j);
@@ -244,7 +254,7 @@ void lancer_partie(void) {
                     }
                     
                     free(players);
-                    return;
+                    return true;
                 }
                 
                 int next = (joueur_actuel + 1) % nb_joueurs;
@@ -257,8 +267,8 @@ void lancer_partie(void) {
     }
     
     free(players);
+    return true;
 }
-
 
 bool partie_en_cours(void) {
     // Si le fichier nombre_joueurs.txt existe, une partie était en cours

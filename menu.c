@@ -8,6 +8,7 @@
 #include "Tuile.h"
 #include "table.h"
 #include "manipulation.h"
+#include "partie.h"
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -230,5 +231,65 @@ bool menu_manipulation(Joueur* j) {
         } else {
             printf("Choix invalide\n");
         }
+    }
+}
+
+void menu_principal(void) {
+    while (1) {
+        printf("\n=== RUMMIKUB ===\n\n");
+        
+        if (partie_en_cours()) {
+            printf("Une partie est en cours.\n");
+            printf("1. Continuer\n");
+            printf("2. Nouvelle partie\n");
+            printf("0. Quitter\n");
+            printf("Choix : ");
+            
+            int choix;
+            scanf("%d", &choix);
+            getchar();
+            
+            switch(choix) {
+                case 1:
+                    if (!lancer_partie()) {
+                        // Partie déjà terminée
+                        continue;
+                    }
+                    // Partie jouée et terminée (gagnant)
+                    continue;  // ← Revenir au menu
+                    
+                case 2:
+                    // Nouvelle partie - supprimer les anciens fichiers
+                    remove("nombre_joueurs.txt");
+                    remove("pioche.json");
+                    remove("table.json");
+                    remove("table_virtuelle.json");
+                    remove("chevalet_virtuel.json");
+                    remove("tampon.json");
+                    remove("scores.json");
+                    for (int i = 1; i <= 4; i++) {
+                        char filename[20];
+                        sprintf(filename, "%d.json", i);
+                        remove(filename);
+                    }
+                    
+                    printf("\n--- NOUVELLE PARTIE ---\n");
+                    lancer_partie();
+                    continue;  // ← Revenir au menu après
+                    
+                case 0:
+                    printf("Au revoir !\n");
+                    exit(0);
+                    
+                default:
+                    printf("Choix invalide.\n");
+                    continue;
+            }
+        }
+        
+        // Nouvelle partie (aucun fichier existant)
+        printf("\n--- NOUVELLE PARTIE ---\n");
+        lancer_partie();
+        continue;  // ← Revenir au menu après
     }
 }

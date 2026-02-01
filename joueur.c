@@ -90,6 +90,7 @@ void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_
     }
     cJSON_AddItemToObject(root, "tuiles", array);
     
+    // CHANGEMENT ICI
     char *json_str = cJSON_Print(root);
     if (json_str) {
         FILE *f = fopen(fichier, "w");
@@ -164,6 +165,7 @@ void ajouter_a_table(Tuile* comb, int n) {
     }
     cJSON_AddItemToArray(root,new_comb);
     
+    // CHANGEMENT ICI
     char *str = cJSON_Print(root);
     FILE* fw = fopen("table.json","w");
     if(fw){ fprintf(fw,"%s",str); fclose(fw); }
@@ -487,6 +489,7 @@ void passer_tour(Joueur* j, Joueur* next) {
             cJSON* tour = cJSON_GetObjectItem(root, "tour");
             if (tour) cJSON_SetBoolValue(tour, false);
             
+            // CHANGEMENT ICI (premier)
             char* new_json = cJSON_Print(root);
             f = fopen(j->chevalet, "w");
             if (f) {
@@ -516,6 +519,7 @@ void passer_tour(Joueur* j, Joueur* next) {
                 cJSON* tour = cJSON_GetObjectItem(root, "tour");
                 if (tour) cJSON_SetBoolValue(tour, true);
                 
+                // CHANGEMENT ICI (deuxième)
                 char* new_json = cJSON_Print(root);
                 f = fopen(next->chevalet, "w");
                 if (f) {

@@ -5,9 +5,8 @@
 #include "table.h"
 #include "struct.h"
 #include "Tuile.h"
-#include "joueur.h"  // Pour combinaison_valide
+#include "joueur.h"  
 
-// Variables globales pour la table en mémoire
 static cJSON* table_json = NULL;
 static bool table_chargee = false;
 

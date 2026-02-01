@@ -1,6 +1,6 @@
 {
-	"pseudo":	"joueur2",
+	"pseudo":	"v",
 	"tour":	true,
-	"premier_tour":	false,
+	"premier_tour":	true,
 	"tuiles":	[]
 }
