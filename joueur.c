@@ -131,6 +131,46 @@ Joueur* creer_joueur(int* nb_joueurs){
 }
 
 /*-------------------------------------------------------------------*/
+void ajouter_a_table(Tuile* comb, int n) {
+    if (n < 3) return;
+    
+    cJSON *root = NULL;
+    FILE* f = fopen("table.json", "r");
+    if(f){
+        fseek(f,0,SEEK_END);
+        long fsize = ftell(f);
+        fseek(f,0,SEEK_SET);
+        char *data = malloc(fsize+1);
+        fread(data,1,fsize,f);
+        data[fsize]=0;
+        fclose(f);
+        
+        root = cJSON_Parse(data);
+        free(data);
+    }
+    
+    if(!root) root = cJSON_CreateArray();
+    
+    cJSON *new_comb = cJSON_CreateArray();
+    for(int i=0;i<n;i++){
+        cJSON *item = cJSON_CreateObject();
+        cJSON_AddNumberToObject(item,"id",comb[i].id);
+        cJSON_AddNumberToObject(item,"valeur",comb[i].valeur);
+        char str_color[2]={comb[i].couleur,0};
+        cJSON_AddStringToObject(item,"couleur",str_color);
+        cJSON_AddBoolToObject(item,"joker",comb[i].joker);
+        cJSON_AddItemToArray(new_comb,item);
+    }
+    cJSON_AddItemToArray(root,new_comb);
+    
+    char *str = cJSON_Print(root);
+    FILE* fw = fopen("table.json","w");
+    if(fw){ fprintf(fw,"%s",str); fclose(fw); }
+    free(str);
+    cJSON_Delete(root);
+}
+
+/*-------------------------------------------------------------------*/
 void jouer_combinaison(Joueur* j) {
     Tuile tuiles_joueur[MAX_TUILES];
     int nb_tuiles = 0;

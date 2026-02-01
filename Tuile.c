@@ -181,52 +181,31 @@ void afficher_tuiles(Tuile tuiles[], int nb_tuiles) {
     }
 }
 
-/*-------------------------------------------------------------------*/
-void ajouter_a_table(Tuile* comb, int n) {
-    if (n < 3) return;
-    
-    cJSON *root = NULL;
-    FILE* f = fopen("table.json", "r");
-    if(f){
-        fseek(f,0,SEEK_END);
-        long fsize = ftell(f);
-        fseek(f,0,SEEK_SET);
-        char *data = malloc(fsize+1);
-        fread(data,1,fsize,f);
-        data[fsize]=0;
-        fclose(f);
-        
-        root = cJSON_Parse(data);
-        free(data);
-    }
-    
-    if(!root) root = cJSON_CreateArray();
-    
-    cJSON *new_comb = cJSON_CreateArray();
-    for(int i=0;i<n;i++){
-        cJSON *item = cJSON_CreateObject();
-        cJSON_AddNumberToObject(item,"id",comb[i].id);
-        cJSON_AddNumberToObject(item,"valeur",comb[i].valeur);
-        char str_color[2]={comb[i].couleur,0};
-        cJSON_AddStringToObject(item,"couleur",str_color);
-        cJSON_AddBoolToObject(item,"joker",comb[i].joker);
-        cJSON_AddItemToArray(new_comb,item);
-    }
-    cJSON_AddItemToArray(root,new_comb);
-    
-    char *str = cJSON_Print(root);
-    FILE* fw = fopen("table.json","w");
-    if(fw){ fprintf(fw,"%s",str); fclose(fw); }
-    free(str);
-    cJSON_Delete(root);
-}
 
 /*-------------------------------------------------------------------*/
 void distribuer_tuile() {
     int nb_joueurs;
-    Joueur* players = malloc(sizeof(Joueur) * 4); // temporaire
-    // TODO: Implémenter proprement
-    printf("distribuer_tuile() - À IMPLÉMENTER\n");
+    Joueur* players = creer_joueur(&nb_joueurs);
+    if (!players) return;
+
+    for (int j = 0; j < nb_joueurs; j++) {
+        cJSON *root = cJSON_CreateObject();
+        cJSON_AddStringToObject(root, "pseudo", players[j].pseudo);
+        cJSON_AddBoolToObject(root, "tour", (j==0));
+        cJSON_AddBoolToObject(root, "premier_tour", true);
+        cJSON_AddItemToObject(root, "tuiles", cJSON_CreateArray());
+
+        char *str = cJSON_Print(root);
+        FILE* fj = fopen(players[j].chevalet, "w");
+        if(fj){ fprintf(fj, "%s", str); fclose(fj); }
+        cJSON_Delete(root);
+        free(str);
+    }
+
+    for (int i = 0; i < 14; i++)
+        for (int j = 0; j < nb_joueurs; j++)
+            piocher_tuile(&players[j]);
+
     free(players);
 }
 
@@ -290,57 +269,5 @@ void piocher_tuile(Joueur* j) {
     if(fw){ fprintf(fw,"%s",new_data); fclose(fw); }
     free(new_data);
     free(data);
-    cJSON_Delete(root);
-}
-void afficher_table(const char* fichier_table) {
-    FILE* f = fopen(fichier_table, "r");
-    if (!f) {
-        printf("Table vide ou fichier %s non trouvé\n", fichier_table);
-        return;
-    }
-    
-    fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    char* data = malloc(fsize + 1);
-    fread(data, 1, fsize, f);
-    data[fsize] = 0;
-    fclose(f);
-    
-    cJSON* root = cJSON_Parse(data);
-    free(data);
-    if (!root) {
-        printf("Erreur de lecture de la table\n");
-        return;
-    }
-    
-    int nb_comb = cJSON_GetArraySize(root);
-    printf("\n=== TABLE (%d combinaison%s) ===\n", nb_comb, nb_comb > 1 ? "s" : "");
-    
-    if (nb_comb == 0) {
-        printf("Aucune combinaison sur la table.\n");
-    }
-    
-    for (int i = 0; i < nb_comb; i++) {
-        cJSON* comb = cJSON_GetArrayItem(root, i);
-        int nb_tuiles = cJSON_GetArraySize(comb);
-        
-        printf("[%d] ", i);
-        for (int j = 0; j < nb_tuiles; j++) {
-            cJSON* tuile_json = cJSON_GetArrayItem(comb, j);
-            int valeur = cJSON_GetObjectItem(tuile_json, "valeur")->valueint;
-            char couleur = cJSON_GetObjectItem(tuile_json, "couleur")->valuestring[0];
-            bool joker = cJSON_IsTrue(cJSON_GetObjectItem(tuile_json, "joker"));
-            
-            if (joker) {
-                printf("[J] ");
-            } else {
-                printf("%d%c ", valeur, couleur);
-            }
-        }
-        printf("\n");
-    }
-    printf("=============================\n");
-    
     cJSON_Delete(root);
 }

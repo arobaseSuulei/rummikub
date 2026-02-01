@@ -6,6 +6,7 @@
 #include "menu.h"
 #include "joueur.h"
 #include "Tuile.h"
+#include "table.h"
 #include "manipulation.h"
 
 /* ------------------------------------------------------------------------- */
@@ -85,45 +86,68 @@ void executer_option(int choix, Joueur* j) {
             break;
             
         case 5:
+            printf("\n>>> MANIPULATION DE LA TABLE\n");
+            // Vérifier si la table contient quelque chose
+            FILE* f = fopen("table.json", "r");
+            if (!f) {
+                printf("La table est vide. Vous ne pouvez pas la manipuler.\n");
+                return;
+            }
+            
+            fseek(f, 0, SEEK_END);
+            long fsize = ftell(f);
+            fclose(f);
+            
+            if (fsize <= 2) { // Fichier vide ou juste "[]"
+                printf("La table est vide. Vous ne pouvez pas la manipuler.\n");
+                return;
+            }
+            
             menu_manipulation(j);
             break;
     }
 }
 
+static void initialiser_virtuel(Joueur* j) {
+    // Copier table.json → table_virtuelle.json
+    FILE *src = fopen("table.json", "r");
+    FILE *dst = fopen("table_virtuelle.json", "w");
+    if (src && dst) {
+        char buffer[1024];
+        size_t n;
+        while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0) {
+            fwrite(buffer, 1, n, dst);
+        }
+        fclose(src);
+        fclose(dst);
+    }
+    
+    // Copier chevalet → chevalet_virtuel.json
+    src = fopen(j->chevalet, "r");
+    dst = fopen("chevalet_virtuel.json", "w");
+    if (src && dst) {
+        char buffer[1024];
+        size_t n;
+        while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0) {
+            fwrite(buffer, 1, n, dst);
+        }
+        fclose(src);
+        fclose(dst);
+    }
+}
+
+static void afficher_chevalet_virtuel(void) {
+    Tuile tuiles[MAX_TUILES];
+    int nb_tuiles = 0;
+    charger_chevalet("chevalet_virtuel.json", tuiles, &nb_tuiles);
+    afficher_tuiles(tuiles, nb_tuiles);
+}
+
 void menu_manipulation(Joueur* j) {
     printf("\n>>> MANIPULATION DE LA TABLE\n");
     
-    // Fonction pour initialiser les fichiers virtuels
-    void initialiser_virtuel(void) {
-        // Copier table.json → table_virtuelle.json
-        FILE *src = fopen("table.json", "r");
-        FILE *dst = fopen("table_virtuelle.json", "w");
-        if (src && dst) {
-            char buffer[1024];
-            size_t n;
-            while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0) {
-                fwrite(buffer, 1, n, dst);
-            }
-            fclose(src);
-            fclose(dst);
-        }
-        
-        // Copier chevalet → chevalet_virtuel.json
-        src = fopen(j->chevalet, "r");
-        dst = fopen("chevalet_virtuel.json", "w");
-        if (src && dst) {
-            char buffer[1024];
-            size_t n;
-            while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0) {
-                fwrite(buffer, 1, n, dst);
-            }
-            fclose(src);
-            fclose(dst);
-        }
-    }
-    
     // Initialiser
-    initialiser_virtuel();
+    initialiser_virtuel(j);
     
     // Boucle de manipulation
     while (1) {
@@ -131,36 +155,7 @@ void menu_manipulation(Joueur* j) {
         afficher_table("table_virtuelle.json");
         
         printf("\n=== VOTRE CHEVALET ===\n");
-        FILE* f_chevalet = fopen("chevalet_virtuel.json", "r");
-        if (f_chevalet) {
-            fseek(f_chevalet, 0, SEEK_END);
-            long fsize = ftell(f_chevalet);
-            fseek(f_chevalet, 0, SEEK_SET);
-            char* data = malloc(fsize + 1);
-            fread(data, 1, fsize, f_chevalet);
-            data[fsize] = 0;
-            fclose(f_chevalet);
-            
-            cJSON* root = cJSON_Parse(data);
-            free(data);
-            if (root) {
-                cJSON* tuiles_array = cJSON_GetObjectItem(root, "tuiles");
-                if (tuiles_array) {
-                    int nb_tuiles = cJSON_GetArraySize(tuiles_array);
-                    for (int i = 0; i < nb_tuiles; i++) {
-                        cJSON* tuile_json = cJSON_GetArrayItem(tuiles_array, i);
-                        int id = cJSON_GetObjectItem(tuile_json, "id")->valueint;
-                        int valeur = cJSON_GetObjectItem(tuile_json, "valeur")->valueint;
-                        char couleur = cJSON_GetObjectItem(tuile_json, "couleur")->valuestring[0];
-                        bool joker = cJSON_IsTrue(cJSON_GetObjectItem(tuile_json, "joker"));
-                        
-                        printf("%d: %d%c%s  ", id, valeur, couleur, joker ? " (J)" : "");
-                    }
-                    printf("\n");
-                }
-                cJSON_Delete(root);
-            }
-        }
+        afficher_chevalet_virtuel();
         
         printf("\n=== MENU MANIPULATION ===\n");
         printf("1. Isoler une tuile de la table\n");
@@ -204,38 +199,21 @@ void menu_manipulation(Joueur* j) {
             
         } else if (choix_manip == 4) {
             if (valider_tour(j)) {
-                printf("\n🎉 Tour validé avec succès ! Retour au menu principal.\n");
+                printf("\n🎉 Tour validé avec succès !\n");
                 break;
-            } else {
-                printf("\n❌ Validation échouée. Voulez-vous :\n");
-                printf("   1. Recommencer (recréer les fichiers virtuels)\n");
-                printf("   2. Continuer à corriger\n");
-                printf("Choix (1-2) : ");
-                
-                int choix_reprise;
-                scanf("%d", &choix_reprise);
-                getchar();
-                
-                if (choix_reprise == 1) {
-                    // Supprimer et recréer
-                    remove("table_virtuelle.json");
-                    remove("chevalet_virtuel.json");
-                    initialiser_virtuel();
-                    printf("Fichiers virtuels recréés depuis l'état actuel.\n");
-                }
-                // Si choix == 2, on continue simplement
             }
+            // Si échec, reste dans le menu
             
         } else if (choix_manip == 5) {
             remove("table_virtuelle.json");
             remove("chevalet_virtuel.json");
-            initialiser_virtuel();
-            printf("Manipulation recommencée. Fichiers virtuels recréés.\n");
+            initialiser_virtuel(j);
+            printf("Manipulation recommencée.\n");
             
         } else if (choix_manip == 6) {
             remove("table_virtuelle.json");
             remove("chevalet_virtuel.json");
-            printf("Manipulation abandonnée. Retour au menu principal.\n");
+            printf("Manipulation abandonnée.\n");
             break;
             
         } else {

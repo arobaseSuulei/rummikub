@@ -13,50 +13,6 @@
 #define CHEVALET_VIRTUEL "chevalet_virtuel.json"
 
 /*--------------------------------------------------------*/
-void debut_manipulation(Joueur* j) {
-    // 1. Copier table.json → table_virtuelle.json
-    FILE *src = fopen("table.json", "r");
-    FILE *dst = fopen("table_virtuelle.json", "w");
-    if (src && dst) {
-        char buffer[1024];
-        size_t n;
-        while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0) {
-            fwrite(buffer, 1, n, dst);
-        }
-        fclose(src);
-        fclose(dst);
-        printf("Table virtuelle créée\n");
-    } else {
-        if (src) fclose(src);
-        if (dst) fclose(dst);
-        // Créer table_virtuelle.json vide si table.json n'existe pas
-        dst = fopen("table_virtuelle.json", "w");
-        if (dst) {
-            fprintf(dst, "[]");
-            fclose(dst);
-        }
-    }
-    
-    // 2. Copier chevalet du joueur → chevalet_virtuel.json
-    src = fopen(j->chevalet, "r");
-    dst = fopen("chevalet_virtuel.json", "w");
-    if (src && dst) {
-        char buffer[1024];
-        size_t n;
-        while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0) {
-            fwrite(buffer, 1, n, dst);
-        }
-        fclose(src);
-        fclose(dst);
-        printf("Chevalet virtuel créé\n");
-    } else {
-        if (src) fclose(src);
-        if (dst) fclose(dst);
-        printf("Erreur: impossible de copier le chevalet\n");
-    }
-}
-
-/*--------------------------------------------------------*/
 void isoler_tuile(int tuile_id) {
     FILE* f_test = fopen("table_virtuelle.json", "r");
     if (!f_test) {

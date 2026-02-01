@@ -1,49 +1,58 @@
+// main.c
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include "partie.h"
 #include "Tuile.h"
 #include "table.h"
-#include "joueur.h"
-#include "menu.h"
 
 int main(void) {
-    printf("=== BIENVENUE AU RUMMIKUB ===\n\n");
+    printf("=== RUMMIKUB ===\n\n");
     
-    // Initialisation
-    /*creer_pioche();          // crée pioche.json
-    creer_table();           // crée table.json vide
-    distribuer_tuile(); */   // crée X.json + distribue 14 tuiles à chaque joueur
-    
-    // Après distribuer_tuile(), les joueurs sont créés avec leurs fichiers JSON
-    // Mais nous n'avons pas d'objet Joueur en mémoire...
-    
-    // SOLUTION 1: Créer un joueur test comme avant
-    Joueur j;
-    strcpy(j.chevalet, "1.json");  // tester sur le joueur 1
-    
-    // Charger toutes les infos du joueur depuis le fichier
-    charger_joueur(&j);
-    
-    printf("\n=== TEST AVANT MENU ===\n");
-    printf("Pseudo      : %s\n", j.pseudo);
-    printf("Chevalet    : %s\n", j.chevalet);
-    printf("Tour actif  : %d\n", j.tour);
-    printf("Premier tour: %d\n", j.premier_tour);
-    
-    // Utiliser le menu
-    int continuer = 1;
-    while (continuer) {
-        afficher_menu_principal();
-        int choix = choisir_option_menu();
+    if (partie_en_cours()) {
+        printf("Une partie est en cours.\n");
+        printf("1. Reprendre la partie\n");
+        printf("2. Recommencer une nouvelle partie\n");
+        printf("0. Quitter\n");
+        printf("Choix : ");
         
-        if (choix == 0) {
-            continuer = 0;
-        } else {
-            executer_option(choix, &j);
+        int choix;
+        scanf("%d", &choix);
+        getchar();
+        
+        switch(choix) {
+            case 1:
+                // Reprendre la partie existante
+                lancer_partie();
+                return 0;
+                
+            case 2:
+                // Nouvelle partie - supprimer les anciens fichiers
+                remove("nombre_joueurs.txt");
+                remove("pioche.json");
+                remove("table.json");
+                for (int i = 1; i <= 4; i++) {
+                    char filename[20];
+                    sprintf(filename, "%d.json", i);
+                    remove(filename);
+                }
+                // Continuer pour créer nouvelle partie
+                break;
+                
+            case 0:
+                printf("Au revoir !\n");
+                return 0;
+                
+            default:
+                printf("Choix invalide.\n");
+                return 1;
         }
     }
     
-    printf("\nMerci d'avoir joué !\n");
+    // Nouvelle partie
+    printf("\n--- NOUVELLE PARTIE ---\n");
+    creer_pioche();
+    creer_table();
+    lancer_partie();
     
     return 0;
 }
