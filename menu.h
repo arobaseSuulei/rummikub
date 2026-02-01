@@ -6,9 +6,9 @@
 /* Menu principal */
 void afficher_menu_principal(void);
 int choisir_option_menu(void);
-bool executer_option(int choix, Joueur* j);  // <-- Change void to bool
+bool executer_option(int choix, Joueur* j);  
 
 /* Menu de manipulation */
-void menu_manipulation(Joueur* j);
+bool menu_manipulation(Joueur* j); 
 
 #endif

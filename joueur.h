@@ -10,13 +10,18 @@ Joueur* creer_joueur(int* nb_joueurs);
 void charger_joueur(Joueur* j);
 bool est_premier_tour(Joueur j);
 void passer_tour(Joueur* j, Joueur* next);
+bool a_fini(Joueur j);
 
 /* Fonctions pour le chevalet */
 void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles);
 void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles, bool premier_tour_valide);
 
 /* Fonction de jeu */
-void jouer_combinaison(Joueur* j);
+bool jouer_combinaison(Joueur* j); 
 void ajouter_a_table(Tuile* comb, int n);
+
+// Fonctions pour les scores
+void sauvegarder_scores(Joueur* players, int nb_joueurs, int index_gagnant);
+void charger_et_afficher_scores(void);
 
 #endif

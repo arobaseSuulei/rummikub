@@ -172,7 +172,7 @@ void ajouter_a_table(Tuile* comb, int n) {
 }
 
 /*-------------------------------------------------------------------*/
-void jouer_combinaison(Joueur* j) {
+bool jouer_combinaison(Joueur* j) {
     Tuile tuiles_joueur[MAX_TUILES];
     int nb_tuiles = 0;
     bool premier_tour = est_premier_tour(*j);
@@ -208,7 +208,7 @@ void jouer_combinaison(Joueur* j) {
         // Vérifier si abandon
         if (strcmp(ligne, "-1\n") == 0) {
             printf("Abandon du placement. Retour au menu.\n");
-            return;
+            return false;
         }
         
         char *tok = strtok(ligne," \n");
@@ -216,7 +216,7 @@ void jouer_combinaison(Joueur* j) {
             int id = atoi(tok);
             if (id == -1) {
                 printf("Abandon du placement. Retour au menu.\n");
-                return;
+                return false;
             }
             for(int i=0;i<nb_tuiles;i++)
                 if(tuiles_joueur[i].id==id) indices[nb_comb++]=i;
@@ -285,7 +285,7 @@ void jouer_combinaison(Joueur* j) {
             if (strcmp(ligne, "-1\n") == 0) {
                 printf("Abandon du premier tour.\n");
                 cJSON_Delete(tampon);
-                return;
+                return false;
             }
             
             if(ligne[0]=='o'||ligne[0]=='O') continue;
@@ -293,7 +293,7 @@ void jouer_combinaison(Joueur* j) {
             if(somme_cumulee<30){
                 printf("Premier tour raté.\n");
                 cJSON_Delete(tampon);
-                return;
+                return false;
             }
             
             charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
@@ -353,8 +353,14 @@ void jouer_combinaison(Joueur* j) {
             
             printf("Premier tour validé avec %d points !\n", somme_cumulee);
             printf("Tuiles retirées du chevalet : %d\n", nb_toutes_tuiles_jouees);
+            
+            // VÉRIFICATION SI PLUS DE TUILES (PREMIER TOUR)
+            if (nb_restantes == 0) {
+                printf("🎉 Vous n'avez plus de tuiles !\n");
+            }
+            
             cJSON_Delete(tampon);
-            return;
+            return true;
         }
         
         ajouter_a_table(comb,nb_comb);
@@ -381,20 +387,27 @@ void jouer_combinaison(Joueur* j) {
         afficher_table("table.json");
         
         printf("Combinaison posée. %d tuiles retirées.\n", nb_comb);
+        
+        // VÉRIFICATION SI PLUS DE TUILES (TOUR NORMAL)
+        if (nb_restantes == 0) {
+            printf("🎉 Vous n'avez plus de tuiles !\n");
+            return true;
+        }
+        
         printf("Encore une ? (o/n) (ou -1 pour arrêter) ");
         fgets(ligne,sizeof(ligne),stdin);
         
         if (strcmp(ligne, "-1\n") == 0) {
             printf("Fin du placement. Retour au menu.\n");
-            return;
+            return false;
         }
         
-        if(ligne[0]!='o' && ligne[0]!='O') return;
+        if(ligne[0]!='o' && ligne[0]!='O') return true;
         
         charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
     }
+    return false;
 }
-
 /*-------------------------------------------------------------------*/
 bool est_premier_tour(Joueur j) {
     FILE* f = fopen(j.chevalet,"r");
@@ -514,4 +527,93 @@ void passer_tour(Joueur* j, Joueur* next) {
             }
         }
     }
+}
+
+bool a_fini(Joueur j) {
+    Tuile tuiles[MAX_TUILES];
+    int nb_tuiles = 0;
+    
+    charger_chevalet(j.chevalet, tuiles, &nb_tuiles);
+    
+    // Si le joueur a 0 tuiles, il a fini
+    return (nb_tuiles == 0);
+}
+
+void sauvegarder_scores(Joueur* players, int nb_joueurs, int index_gagnant) {
+    cJSON *root = cJSON_CreateObject();
+    
+    // Calculer les scores
+    int score_total_gagnant = 0;
+    
+    for (int i = 0; i < nb_joueurs; i++) {
+        Tuile tuiles[MAX_TUILES];
+        int nb_tuiles = 0;
+        charger_chevalet(players[i].chevalet, tuiles, &nb_tuiles);
+        
+        int score = 0;
+        for (int k = 0; k < nb_tuiles; k++) {
+            score += tuiles[k].joker ? 30 : tuiles[k].valeur;
+        }
+        
+        if (i == index_gagnant) {
+            // Le gagnant: somme des scores des autres
+            int somme_autres = 0;
+            for (int j = 0; j < nb_joueurs; j++) {
+                if (j != index_gagnant) {
+                    Tuile tuiles_autre[MAX_TUILES];
+                    int nb_tuiles_autre = 0;
+                    charger_chevalet(players[j].chevalet, tuiles_autre, &nb_tuiles_autre);
+                    
+                    for (int k = 0; k < nb_tuiles_autre; k++) {
+                        somme_autres += tuiles_autre[k].joker ? 30 : tuiles_autre[k].valeur;
+                    }
+                }
+            }
+            cJSON_AddNumberToObject(root, players[i].pseudo, somme_autres);
+            score_total_gagnant = somme_autres;
+        } else {
+            // Perdants: leur score en négatif
+            cJSON_AddNumberToObject(root, players[i].pseudo, -score);
+        }
+    }
+    
+    // Sauvegarder dans fichier
+    char *json_str = cJSON_Print(root);
+    FILE *f = fopen("scores.json", "w");
+    if (f) {
+        fprintf(f, "%s", json_str);
+        fclose(f);
+    }
+    free(json_str);
+    cJSON_Delete(root);
+}
+
+void charger_et_afficher_scores(void) {
+    FILE *f = fopen("scores.json", "r");
+    if (!f) {
+        printf("Aucun score sauvegardé.\n");
+        return;
+    }
+    
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *data = malloc(fsize + 1);
+    fread(data, 1, fsize, f);
+    data[fsize] = 0;
+    fclose(f);
+    
+    cJSON *root = cJSON_Parse(data);
+    free(data);
+    if (!root) return;
+    
+    printf("\n=== SCORES FINAUX ===\n");
+    
+    cJSON *item = root->child;
+    while (item) {
+        printf("%s : %d points\n", item->string, item->valueint);
+        item = item->next;
+    }
+    
+    cJSON_Delete(root);
 }

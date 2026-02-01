@@ -45,6 +45,7 @@ int choisir_option_menu(void) {
 }
 
 /* ------------------------------------------------------------------------- */
+
 bool executer_option(int choix, Joueur* j) {
     switch(choix) {
         case 0:
@@ -53,8 +54,7 @@ bool executer_option(int choix, Joueur* j) {
             
         case 1:
             printf("\n>>> JOUER UNE COMBINAISON\n");
-            jouer_combinaison(j);
-            return false;
+            return jouer_combinaison(j);
             
         case 2:
             printf("\n>>> PIOCHE ET FIN DE TOUR\n");
@@ -104,10 +104,9 @@ bool executer_option(int choix, Joueur* j) {
                 return false;
             }
             
-            menu_manipulation(j);
-            return true;
+            return menu_manipulation(j);
             
-        case 6:  // <-- NOUVELLE
+        case 6:
             printf("\n>>> PASSER SON TOUR\n");
             printf("Vous passez votre tour sans piocher.\n");
             printf("Votre tour est terminé.\n");
@@ -117,6 +116,7 @@ bool executer_option(int choix, Joueur* j) {
             return false;
     }
 }
+
 static void initialiser_virtuel(Joueur* j) {
     // Copier table.json → table_virtuelle.json
     FILE *src = fopen("table.json", "r");
@@ -152,7 +152,7 @@ static void afficher_chevalet_virtuel(void) {
     afficher_tuiles(tuiles, nb_tuiles);
 }
 
-void menu_manipulation(Joueur* j) {
+bool menu_manipulation(Joueur* j) {
     printf("\n>>> MANIPULATION DE LA TABLE\n");
     
     // Initialiser
@@ -211,7 +211,7 @@ void menu_manipulation(Joueur* j) {
                 printf("\n🎉 Tour validé avec succès !\n");
                 remove("table_virtuelle.json");
                 remove("chevalet_virtuel.json");
-                return; // Retour à executer_option()
+                return true; // Tour terminé
             }
             // Si échec, reste dans le menu
             
@@ -225,7 +225,7 @@ void menu_manipulation(Joueur* j) {
             remove("table_virtuelle.json");
             remove("chevalet_virtuel.json");
             printf("Manipulation abandonnée.\n");
-            return; // Retour à executer_option()
+            return false; // Tour non terminé
             
         } else {
             printf("Choix invalide\n");

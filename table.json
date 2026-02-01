@@ -1,46 +1,21 @@
 [[{
-			"id":	90,
-			"valeur":	10,
+			"id":	201,
+			"valeur":	6,
 			"couleur":	"R",
 			"joker":	false
 		}, {
-			"id":	92,
-			"valeur":	10,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	95,
-			"valeur":	10,
-			"couleur":	"O",
-			"joker":	false
-		}], [{
-			"id":	22,
-			"valeur":	8,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	23,
-			"valeur":	6,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	91,
+			"id":	202,
 			"valeur":	7,
-			"couleur":	"O",
+			"couleur":	"R",
 			"joker":	false
-		}], [{
-			"id":	22,
+		}, {
+			"id":	203,
 			"valeur":	8,
-			"couleur":	"O",
+			"couleur":	"R",
 			"joker":	false
 		}, {
-			"id":	23,
-			"valeur":	6,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	91,
-			"valeur":	7,
-			"couleur":	"O",
+			"id":	104,
+			"valeur":	5,
+			"couleur":	"R",
 			"joker":	false
 		}]]

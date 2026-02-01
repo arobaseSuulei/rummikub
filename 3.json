@@ -1,81 +1,21 @@
 {
-	"pseudo":	"maelle",
-	"tour":	false,
+	"pseudo":	"joueur3",
+	"tour":	true,
 	"premier_tour":	true,
 	"tuiles":	[{
-			"id":	53,
-			"valeur":	1,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	51,
-			"valeur":	13,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	100,
-			"valeur":	12,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	89,
-			"valeur":	10,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	45,
-			"valeur":	12,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	12,
-			"valeur":	3,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	74,
-			"valeur":	6,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	36,
-			"valeur":	9,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	20,
-			"valeur":	5,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	35,
-			"valeur":	9,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	26,
-			"valeur":	7,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	5,
-			"valeur":	2,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	6,
-			"valeur":	2,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	65,
+			"id":	105,
 			"valeur":	4,
 			"couleur":	"B",
 			"joker":	false
 		}, {
-			"id":	80,
-			"valeur":	7,
-			"couleur":	"V",
+			"id":	106,
+			"valeur":	4,
+			"couleur":	"R",
+			"joker":	false
+		}, {
+			"id":	107,
+			"valeur":	4,
+			"couleur":	"O",
 			"joker":	false
 		}]
 }

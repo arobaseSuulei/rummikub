@@ -1,61 +1,10 @@
 {
-	"pseudo":	"thierno",
-	"tour":	false,
-	"premier_tour":	false,
-	"tuiles":	[{
-			"id":	43,
-			"valeur":	11,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	10,
-			"valeur":	3,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	31,
-			"valeur":	8,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	71,
-			"valeur":	5,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	21,
-			"valeur":	6,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	59,
-			"valeur":	2,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	7,
-			"valeur":	2,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	64,
-			"valeur":	3,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	81,
-			"valeur":	8,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	2,
-			"valeur":	1,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	4,
-			"valeur":	1,
-			"couleur":	"V",
-			"joker":	false
-		}]
+  "pseudo": "joueur4",
+  "tour": false,
+  "premier_tour": true,
+  "tuiles": [
+    {"id": 108, "valeur": 5, "couleur": "R", "joker": false},
+    {"id": 109, "valeur": 6, "couleur": "O", "joker": false},
+    {"id": 110, "valeur": 9, "couleur": "V", "joker": false}
+  ]
 }
