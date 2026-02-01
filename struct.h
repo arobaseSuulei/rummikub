@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#define MAX_TUILES 106
+
 typedef struct Tuile{
     int id;
     int valeur;     // 1..13, 0 = joker

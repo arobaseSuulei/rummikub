@@ -7,17 +7,9 @@
 void creer_table(void);
 void afficher_combinaisons_table(void);
 
-// Fonctions de manipulation
-bool peut_recuperer_joker(Tuile* tuile_joueur, int* comb_index, int* tuile_index);
-bool recuperer_joker(Tuile* tuile_joueur, int comb_index, int tuile_index, Tuile* joker_recupere);
 
-bool peut_etendre_suite(Tuile* tuile_joueur, int comb_index, bool gauche, Tuile* tuile_a_recuperer);
-bool etendre_suite(Tuile* tuile_joueur, int comb_index, bool gauche, Tuile* tuile_recuperee);
 
-bool peut_ajouter_tuile_combinaison(Tuile* tuile, int comb_index);
-bool ajouter_tuile_combinaison(Tuile* tuile, int comb_index);
 
-bool diviser_suite_avec_ajout(int comb_index, int position, Tuile* tuile_ajout, bool ajouter_a_premiere);
 
 // Utilitaires
 int compter_combinaisons_table(void);

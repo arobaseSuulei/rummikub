@@ -1,4 +1,3 @@
-// menu.h
 #ifndef MENU_H
 #define MENU_H
 
@@ -7,6 +6,5 @@
 void afficher_menu_principal(void);
 int choisir_option_menu(void);
 void executer_option(int choix, Joueur* j);
-void executer_boucle_jeu(Joueur* joueurs, int nb_joueurs);
-
+void menu_manipulation(Joueur* j);
 #endif

@@ -2,21 +2,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <cjson/cJSON.h>  
 #include "menu.h"
 #include "joueur.h"
-#include "Tuile.h"  
-#include "table.h"
+#include "Tuile.h"
 #include "manipulation.h"
 
 /* ------------------------------------------------------------------------- */
 void afficher_menu_principal(void) {
     printf("\n=== MENU PRINCIPAL - RUMMIKUB ===\n");
     printf("1. Jouer une combinaison\n");
-    printf("2. Récupérer un joker\n");
-    printf("3. Ajouter une tuile à une combinaison existante\n");
-    printf("4. Piocher une tuile et passer mon tour\n");
-    printf("5. Afficher mon chevalet\n");
-    printf("6. Diviser une suite en deux\n");
+    printf("2. Piocher une tuile et passer mon tour\n");
+    printf("3. Afficher mon chevalet\n");
+    printf("4. Afficher la table\n");
+    printf("5. Manipuler la table\n");
     printf("0. Quitter la partie\n");
     printf("---------------------------------\n");
 }
@@ -24,7 +23,7 @@ void afficher_menu_principal(void) {
 /* ------------------------------------------------------------------------- */
 int choisir_option_menu(void) {
     int choix;
-    printf("Votre choix (0-6) : ");  // CHANGÉ : 0-8 → 0-6
+    printf("Votre choix (0-5) : ");
     
     while(1) {
         if (scanf("%d", &choix) != 1) {
@@ -33,50 +32,28 @@ int choisir_option_menu(void) {
             continue;
         }
         
-        if (choix >= 0 && choix <= 6) {  // CHANGÉ : 0-8 → 0-6
+        if (choix >= 0 && choix <= 5) {
             getchar();
             return choix;
         }
         
-        printf("Choix invalide. Entrez un nombre entre 0 et 6 : ");  // CHANGÉ
+        printf("Choix invalide. Entrez un nombre entre 0 et 5 : ");
     }
 }
 
 /* ------------------------------------------------------------------------- */
 void executer_option(int choix, Joueur* j) {
-    // Afficher la table avant chaque action (sauf affichage chevalet et pioche)
-    if (choix != 5 && choix != 0 && choix != 4) {
-        printf("\n=== TABLE ACTUELLE ===\n");
-        afficher_combinaisons_table();
-        printf("=======================\n");
-    }
-    
     switch(choix) {
-        case 0: // Quitter
+        case 0:
             printf("Merci d'avoir joué ! À bientôt.\n");
             exit(0);
-            break;
             
-        case 1: // Jouer une combinaison
+        case 1:
             printf("\n>>> JOUER UNE COMBINAISON\n");
             jouer_combinaison(j);
             break;
             
-        case 2: // Récupérer un joker
-            printf("\n>>> RÉCUPÉRATION D'UN JOKER\n");
-            if (!traiter_joker(j)) {
-                printf("Récupération du joker annulée ou échouée.\n");
-            }
-            break;
-            
-        case 3: // Ajouter à une combinaison existante
-            printf("\n>>> AJOUTER À UNE COMBINAISON EXISTANTE\n");
-            if (!ajouter_tuile_combinaison_existante(j)) {
-                printf("Ajout annulé ou échoué.\n");
-            }
-            break;
-            
-        case 4: // Piocher une tuile ET passer le tour
+        case 2:
             printf("\n>>> PIOCHE ET FIN DE TOUR\n");
             piocher_tuile(j);
             {
@@ -88,7 +65,7 @@ void executer_option(int choix, Joueur* j) {
             }
             break;
             
-        case 5: // Afficher mon chevalet
+        case 3:
             printf("\n>>> MON CHEVALET\n");
             {
                 Tuile tuiles[MAX_TUILES];
@@ -102,53 +79,167 @@ void executer_option(int choix, Joueur* j) {
             }
             break;
             
-        case 6: // Diviser une suite
-            printf("\n>>> DIVISION DE SUITE\n");
-            if (!traiter_division(j)) {
-                printf("Division de suite annulée ou échouée.\n");
-            }
+        case 4:
+            printf("\n>>> TABLE ACTUELLE\n");
+            afficher_table("table.json");
             break;
             
-        // SUPPRIMER LES CAS 7 ET 8
-        default:
-            printf("Option non reconnue.\n");
+        case 5:
+            menu_manipulation(j);
             break;
     }
 }
 
-/* ------------------------------------------------------------------------- */
-void executer_boucle_jeu(Joueur* joueurs, int nb_joueurs) {
-    int joueur_actuel = 0;
-    bool partie_terminee = false;
+void menu_manipulation(Joueur* j) {
+    printf("\n>>> MANIPULATION DE LA TABLE\n");
     
-    while (!partie_terminee) {
-        printf("\n\n=== TOUR DE %s ===\n", joueurs[joueur_actuel].pseudo);
+    // Fonction pour initialiser les fichiers virtuels
+    void initialiser_virtuel(void) {
+        // Copier table.json → table_virtuelle.json
+        FILE *src = fopen("table.json", "r");
+        FILE *dst = fopen("table_virtuelle.json", "w");
+        if (src && dst) {
+            char buffer[1024];
+            size_t n;
+            while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0) {
+                fwrite(buffer, 1, n, dst);
+            }
+            fclose(src);
+            fclose(dst);
+        }
         
-        // Charger les infos du joueur actuel
-        charger_joueur(&joueurs[joueur_actuel]);
+        // Copier chevalet → chevalet_virtuel.json
+        src = fopen(j->chevalet, "r");
+        dst = fopen("chevalet_virtuel.json", "w");
+        if (src && dst) {
+            char buffer[1024];
+            size_t n;
+            while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0) {
+                fwrite(buffer, 1, n, dst);
+            }
+            fclose(src);
+            fclose(dst);
+        }
+    }
+    
+    // Initialiser
+    initialiser_virtuel();
+    
+    // Boucle de manipulation
+    while (1) {
+        printf("\n=== TABLE VIRTUELLE ===\n");
+        afficher_table("table_virtuelle.json");
         
-        // Afficher le menu et exécuter les actions
-        afficher_menu_principal();
-        int choix = choisir_option_menu();
-        executer_option(choix, &joueurs[joueur_actuel]);
-        
-        // Vérifier si le joueur a gagné (plus de tuiles)
-        {
-            Tuile tuiles[MAX_TUILES];
-            int nb_tuiles = 0;
-            charger_chevalet(joueurs[joueur_actuel].chevalet, tuiles, &nb_tuiles);
+        printf("\n=== VOTRE CHEVALET ===\n");
+        FILE* f_chevalet = fopen("chevalet_virtuel.json", "r");
+        if (f_chevalet) {
+            fseek(f_chevalet, 0, SEEK_END);
+            long fsize = ftell(f_chevalet);
+            fseek(f_chevalet, 0, SEEK_SET);
+            char* data = malloc(fsize + 1);
+            fread(data, 1, fsize, f_chevalet);
+            data[fsize] = 0;
+            fclose(f_chevalet);
             
-            if (nb_tuiles == 0) {
-                printf("\n\n🎉 FÉLICITATIONS %s ! 🎉\n", joueurs[joueur_actuel].pseudo);
-                printf("Vous avez posé toutes vos tuiles !\n");
-                partie_terminee = true;
-                break;
+            cJSON* root = cJSON_Parse(data);
+            free(data);
+            if (root) {
+                cJSON* tuiles_array = cJSON_GetObjectItem(root, "tuiles");
+                if (tuiles_array) {
+                    int nb_tuiles = cJSON_GetArraySize(tuiles_array);
+                    for (int i = 0; i < nb_tuiles; i++) {
+                        cJSON* tuile_json = cJSON_GetArrayItem(tuiles_array, i);
+                        int id = cJSON_GetObjectItem(tuile_json, "id")->valueint;
+                        int valeur = cJSON_GetObjectItem(tuile_json, "valeur")->valueint;
+                        char couleur = cJSON_GetObjectItem(tuile_json, "couleur")->valuestring[0];
+                        bool joker = cJSON_IsTrue(cJSON_GetObjectItem(tuile_json, "joker"));
+                        
+                        printf("%d: %d%c%s  ", id, valeur, couleur, joker ? " (J)" : "");
+                    }
+                    printf("\n");
+                }
+                cJSON_Delete(root);
             }
         }
         
-        // Passer au joueur suivant
-        joueur_actuel = (joueur_actuel + 1) % nb_joueurs;
+        printf("\n=== MENU MANIPULATION ===\n");
+        printf("1. Isoler une tuile de la table\n");
+        printf("2. Isoler une tuile de mon chevalet\n");
+        printf("3. Ajouter une tuile à une combinaison\n");
+        printf("4. Valider et appliquer\n");
+        printf("5. Recommencer (annuler et repartir de zéro)\n");
+        printf("6. Quitter (abandonner la manipulation)\n");
+        printf("Choix (1-6) : ");
+        
+        int choix_manip;
+        scanf("%d", &choix_manip);
+        getchar();
+        
+        if (choix_manip == 1) {
+            printf("\nEntrez l'ID de la tuile à isoler : ");
+            int tuile_id;
+            scanf("%d", &tuile_id);
+            getchar();
+            isoler_tuile(tuile_id);
+            
+        } else if (choix_manip == 2) {
+            printf("\nEntrez l'ID de la tuile à isoler de votre chevalet : ");
+            int tuile_id;
+            scanf("%d", &tuile_id);
+            getchar();
+            isoler_tuile_chevalet(tuile_id);
+            
+        } else if (choix_manip == 3) {
+            printf("\nEntrez l'ID de la tuile à ajouter : ");
+            int tuile_id;
+            scanf("%d", &tuile_id);
+            getchar();
+            
+            printf("Entrez l'index de la combinaison cible : ");
+            int comb_index;
+            scanf("%d", &comb_index);
+            getchar();
+            
+            ajouter_tuile_combinaison(tuile_id, comb_index);
+            
+        } else if (choix_manip == 4) {
+            if (valider_tour(j)) {
+                printf("\n🎉 Tour validé avec succès ! Retour au menu principal.\n");
+                break;
+            } else {
+                printf("\n❌ Validation échouée. Voulez-vous :\n");
+                printf("   1. Recommencer (recréer les fichiers virtuels)\n");
+                printf("   2. Continuer à corriger\n");
+                printf("Choix (1-2) : ");
+                
+                int choix_reprise;
+                scanf("%d", &choix_reprise);
+                getchar();
+                
+                if (choix_reprise == 1) {
+                    // Supprimer et recréer
+                    remove("table_virtuelle.json");
+                    remove("chevalet_virtuel.json");
+                    initialiser_virtuel();
+                    printf("Fichiers virtuels recréés depuis l'état actuel.\n");
+                }
+                // Si choix == 2, on continue simplement
+            }
+            
+        } else if (choix_manip == 5) {
+            remove("table_virtuelle.json");
+            remove("chevalet_virtuel.json");
+            initialiser_virtuel();
+            printf("Manipulation recommencée. Fichiers virtuels recréés.\n");
+            
+        } else if (choix_manip == 6) {
+            remove("table_virtuelle.json");
+            remove("chevalet_virtuel.json");
+            printf("Manipulation abandonnée. Retour au menu principal.\n");
+            break;
+            
+        } else {
+            printf("Choix invalide\n");
+        }
     }
-    
-    printf("\n=== PARTIE TERMINÉE ===\n");
 }
