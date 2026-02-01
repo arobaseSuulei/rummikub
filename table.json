@@ -1,1 +1,46 @@
-[]
+[[{
+			"id":	90,
+			"valeur":	10,
+			"couleur":	"R",
+			"joker":	false
+		}, {
+			"id":	92,
+			"valeur":	10,
+			"couleur":	"V",
+			"joker":	false
+		}, {
+			"id":	95,
+			"valeur":	10,
+			"couleur":	"O",
+			"joker":	false
+		}], [{
+			"id":	22,
+			"valeur":	8,
+			"couleur":	"O",
+			"joker":	false
+		}, {
+			"id":	23,
+			"valeur":	6,
+			"couleur":	"O",
+			"joker":	false
+		}, {
+			"id":	91,
+			"valeur":	7,
+			"couleur":	"O",
+			"joker":	false
+		}], [{
+			"id":	22,
+			"valeur":	8,
+			"couleur":	"O",
+			"joker":	false
+		}, {
+			"id":	23,
+			"valeur":	6,
+			"couleur":	"O",
+			"joker":	false
+		}, {
+			"id":	91,
+			"valeur":	7,
+			"couleur":	"O",
+			"joker":	false
+		}]]

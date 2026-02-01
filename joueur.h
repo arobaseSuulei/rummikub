@@ -9,6 +9,7 @@ Joueur* ordre_joueur(Joueur* players, int nb_joueurs);
 Joueur* creer_joueur(int* nb_joueurs);
 void charger_joueur(Joueur* j);
 bool est_premier_tour(Joueur j);
+void passer_tour(Joueur* j, Joueur* next);
 
 /* Fonctions pour le chevalet */
 void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles);

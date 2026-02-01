@@ -7,6 +7,7 @@
 #include "struct.h"
 #include "Tuile.h"
 #include "joueur.h"
+#include "table.h"
 
 /*-------------------------------------------------------------------*/
 int nbr_joueur(){
@@ -192,27 +193,48 @@ void jouer_combinaison(Joueur* j) {
     
     char ligne[256];
     while(1){
+        printf("\n=== TABLE ACTUELLE ===\n");
+        afficher_table("table.json");
+        
         charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
+        printf("\n=== VOTRE CHEVALET ===\n");
         afficher_tuiles(tuiles_joueur, nb_tuiles);
         
         int indices[MAX_TUILES], nb_comb=0;
-        printf("Entrez les IDs des tuiles à poser (min 3) :\n");
+        printf("\nEntrez les IDs des tuiles à poser (min 3) :\n");
+        printf("(ou entrez -1 pour abandonner et retourner au menu)\n");
         if(!fgets(ligne,sizeof(ligne),stdin)) break;
+        
+        // Vérifier si abandon
+        if (strcmp(ligne, "-1\n") == 0) {
+            printf("Abandon du placement. Retour au menu.\n");
+            return;
+        }
         
         char *tok = strtok(ligne," \n");
         while(tok){
             int id = atoi(tok);
+            if (id == -1) {
+                printf("Abandon du placement. Retour au menu.\n");
+                return;
+            }
             for(int i=0;i<nb_tuiles;i++)
                 if(tuiles_joueur[i].id==id) indices[nb_comb++]=i;
             tok=strtok(NULL," \n");
         }
         
-        if(nb_comb<3){ printf("Au moins 3 tuiles.\n"); continue; }
+        if(nb_comb<3){ 
+            printf("Au moins 3 tuiles.\n"); 
+            continue; 
+        }
         
         Tuile comb[MAX_TUILES];
         for(int i=0;i<nb_comb;i++) comb[i]=tuiles_joueur[indices[i]];
         
-        if(!combinaison_valide(comb, nb_comb)){ printf("Combinaison invalide.\n"); continue; }
+        if(!combinaison_valide(comb, nb_comb)){ 
+            printf("Combinaison invalide.\n"); 
+            continue; 
+        }
         
         if(premier_tour){
             int somme=0, max_val=0;
@@ -257,13 +279,19 @@ void jouer_combinaison(Joueur* j) {
             free(str);
             
             printf("Somme cumulée = %d\n", somme_cumulee);
-            printf("Encore une combinaison ? (o/n) ");
+            printf("Encore une combinaison ? (o/n) (ou -1 pour abandonner) ");
             fgets(ligne,sizeof(ligne),stdin);
+            
+            if (strcmp(ligne, "-1\n") == 0) {
+                printf("Abandon du premier tour.\n");
+                cJSON_Delete(tampon);
+                return;
+            }
+            
             if(ligne[0]=='o'||ligne[0]=='O') continue;
             
             if(somme_cumulee<30){
-                printf("Premier tour raté. Vous piochez une tuile.\n");
-                piocher_tuile(j);
+                printf("Premier tour raté.\n");
                 cJSON_Delete(tampon);
                 return;
             }
@@ -319,6 +347,10 @@ void jouer_combinaison(Joueur* j) {
             }
             
             sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, true);
+            
+            printf("\n=== TABLE APRÈS VOTRE TOUR ===\n");
+            afficher_table("table.json");
+            
             printf("Premier tour validé avec %d points !\n", somme_cumulee);
             printf("Tuiles retirées du chevalet : %d\n", nb_toutes_tuiles_jouees);
             cJSON_Delete(tampon);
@@ -345,9 +377,18 @@ void jouer_combinaison(Joueur* j) {
         
         sauvegarder_chevalet(j->chevalet, *j, restantes, nb_restantes, false);
         
+        printf("\n=== TABLE APRÈS VOTRE COMBINAISON ===\n");
+        afficher_table("table.json");
+        
         printf("Combinaison posée. %d tuiles retirées.\n", nb_comb);
-        printf("Encore une ? (o/n) ");
+        printf("Encore une ? (o/n) (ou -1 pour arrêter) ");
         fgets(ligne,sizeof(ligne),stdin);
+        
+        if (strcmp(ligne, "-1\n") == 0) {
+            printf("Fin du placement. Retour au menu.\n");
+            return;
+        }
+        
         if(ligne[0]!='o' && ligne[0]!='O') return;
         
         charger_chevalet(j->chevalet, tuiles_joueur, &nb_tuiles);
@@ -413,4 +454,64 @@ void charger_joueur(Joueur* j) {
     if (premier) j->premier_tour = cJSON_IsTrue(premier);
     
     cJSON_Delete(json);
+}
+
+void passer_tour(Joueur* j, Joueur* next) {
+    // 1. Mettre tour=false pour j
+    FILE* f = fopen(j->chevalet, "r");
+    if (f) {
+        fseek(f, 0, SEEK_END);
+        long fsize = ftell(f);
+        fseek(f, 0, SEEK_SET);
+        char* content = malloc(fsize + 1);
+        fread(content, 1, fsize, f);
+        content[fsize] = 0;
+        fclose(f);
+        
+        cJSON* root = cJSON_Parse(content);
+        free(content);
+        if (root) {
+            cJSON* tour = cJSON_GetObjectItem(root, "tour");
+            if (tour) cJSON_SetBoolValue(tour, false);
+            
+            char* new_json = cJSON_Print(root);
+            f = fopen(j->chevalet, "w");
+            if (f) {
+                fprintf(f, "%s", new_json);
+                fclose(f);
+            }
+            free(new_json);
+            cJSON_Delete(root);
+        }
+    }
+    
+    // 2. Mettre tour=true pour next
+    if (next) {
+        f = fopen(next->chevalet, "r");
+        if (f) {
+            fseek(f, 0, SEEK_END);
+            long fsize = ftell(f);
+            fseek(f, 0, SEEK_SET);
+            char* content = malloc(fsize + 1);
+            fread(content, 1, fsize, f);
+            content[fsize] = 0;
+            fclose(f);
+            
+            cJSON* root = cJSON_Parse(content);
+            free(content);
+            if (root) {
+                cJSON* tour = cJSON_GetObjectItem(root, "tour");
+                if (tour) cJSON_SetBoolValue(tour, true);
+                
+                char* new_json = cJSON_Print(root);
+                f = fopen(next->chevalet, "w");
+                if (f) {
+                    fprintf(f, "%s", new_json);
+                    fclose(f);
+                }
+                free(new_json);
+                cJSON_Delete(root);
+            }
+        }
+    }
 }

@@ -1,9 +1,0 @@
-=== MENU PRINCIPAL - RUMMIKUB ===
-1. Jouer une combinaison
-2. Manipuler la table
-3. Piocher une tuile
-4. Afficher mon chevalet
-5. Passer mon tour
-0. Quitter la partie
-
-il faut fusionner les options 3 et 5; celui qui pioche une tuile passe immédiatement son tour

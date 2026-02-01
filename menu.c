@@ -10,6 +10,7 @@
 #include "manipulation.h"
 
 /* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 void afficher_menu_principal(void) {
     printf("\n=== MENU PRINCIPAL - RUMMIKUB ===\n");
     printf("1. Jouer une combinaison\n");
@@ -17,6 +18,7 @@ void afficher_menu_principal(void) {
     printf("3. Afficher mon chevalet\n");
     printf("4. Afficher la table\n");
     printf("5. Manipuler la table\n");
+    printf("6. Passer mon tour (sans piocher)\n");  // <-- NOUVELLE
     printf("0. Quitter la partie\n");
     printf("---------------------------------\n");
 }
@@ -24,7 +26,7 @@ void afficher_menu_principal(void) {
 /* ------------------------------------------------------------------------- */
 int choisir_option_menu(void) {
     int choix;
-    printf("Votre choix (0-5) : ");
+    printf("Votre choix (0-6) : ");  // <-- Changé à 6
     
     while(1) {
         if (scanf("%d", &choix) != 1) {
@@ -33,17 +35,17 @@ int choisir_option_menu(void) {
             continue;
         }
         
-        if (choix >= 0 && choix <= 5) {
+        if (choix >= 0 && choix <= 6) {  // <-- Changé à 6
             getchar();
             return choix;
         }
         
-        printf("Choix invalide. Entrez un nombre entre 0 et 5 : ");
+        printf("Choix invalide. Entrez un nombre entre 0 et 6 : ");  // <-- 6
     }
 }
 
 /* ------------------------------------------------------------------------- */
-void executer_option(int choix, Joueur* j) {
+bool executer_option(int choix, Joueur* j) {
     switch(choix) {
         case 0:
             printf("Merci d'avoir joué ! À bientôt.\n");
@@ -52,7 +54,7 @@ void executer_option(int choix, Joueur* j) {
         case 1:
             printf("\n>>> JOUER UNE COMBINAISON\n");
             jouer_combinaison(j);
-            break;
+            return false;
             
         case 2:
             printf("\n>>> PIOCHE ET FIN DE TOUR\n");
@@ -64,7 +66,7 @@ void executer_option(int choix, Joueur* j) {
                 printf("Vous avez pioché. Vous avez maintenant %d tuiles.\n", nb_tuiles);
                 printf("Votre tour est terminé.\n");
             }
-            break;
+            return true;
             
         case 3:
             printf("\n>>> MON CHEVALET\n");
@@ -78,36 +80,43 @@ void executer_option(int choix, Joueur* j) {
                     afficher_tuiles(tuiles, nb_tuiles);
                 }
             }
-            break;
+            return false;
             
         case 4:
             printf("\n>>> TABLE ACTUELLE\n");
             afficher_table("table.json");
-            break;
+            return false;
             
         case 5:
             printf("\n>>> MANIPULATION DE LA TABLE\n");
-            // Vérifier si la table contient quelque chose
             FILE* f = fopen("table.json", "r");
             if (!f) {
                 printf("La table est vide. Vous ne pouvez pas la manipuler.\n");
-                return;
+                return false;
             }
             
             fseek(f, 0, SEEK_END);
             long fsize = ftell(f);
             fclose(f);
             
-            if (fsize <= 2) { // Fichier vide ou juste "[]"
+            if (fsize <= 2) {
                 printf("La table est vide. Vous ne pouvez pas la manipuler.\n");
-                return;
+                return false;
             }
             
             menu_manipulation(j);
-            break;
+            return true;
+            
+        case 6:  // <-- NOUVELLE
+            printf("\n>>> PASSER SON TOUR\n");
+            printf("Vous passez votre tour sans piocher.\n");
+            printf("Votre tour est terminé.\n");
+            return true;
+            
+        default:
+            return false;
     }
 }
-
 static void initialiser_virtuel(Joueur* j) {
     // Copier table.json → table_virtuelle.json
     FILE *src = fopen("table.json", "r");
@@ -200,7 +209,9 @@ void menu_manipulation(Joueur* j) {
         } else if (choix_manip == 4) {
             if (valider_tour(j)) {
                 printf("\n🎉 Tour validé avec succès !\n");
-                break;
+                remove("table_virtuelle.json");
+                remove("chevalet_virtuel.json");
+                return; // Retour à executer_option()
             }
             // Si échec, reste dans le menu
             
@@ -214,7 +225,7 @@ void menu_manipulation(Joueur* j) {
             remove("table_virtuelle.json");
             remove("chevalet_virtuel.json");
             printf("Manipulation abandonnée.\n");
-            break;
+            return; // Retour à executer_option()
             
         } else {
             printf("Choix invalide\n");
