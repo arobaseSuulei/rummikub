@@ -15,8 +15,4 @@ void distribuer_tuile(void);
 bool combinaison_valide(Tuile* tuiles, int nb);
 void afficher_tuiles(Tuile tuiles[], int nb_tuiles);
 
-/* Fonctions de chargement/sauvegarde */
-void charger_chevalet(const char* fichier, Tuile tuiles[], int* nb_tuiles);
-void sauvegarder_chevalet(const char* fichier, Joueur j, Tuile tuiles[], int nb_tuiles, bool premier_tour_valide);
-
 #endif

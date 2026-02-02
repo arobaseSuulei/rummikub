@@ -15,7 +15,7 @@ Tuile* initialiser_tuile() {
     
     int index = 0;
     int id = 1;
-    char couleurs[] = {'B','R','O','V'};
+    char couleurs[] = {'B','R','J','N'};
     
     for (int exemplaire = 0; exemplaire < 2; exemplaire++) {
         for (int valeur = 1; valeur <= 13; valeur++) {
@@ -25,8 +25,8 @@ Tuile* initialiser_tuile() {
         }
     }
     
-    t[index++] = (Tuile){id++, 0, 'J', true};
-    t[index++] = (Tuile){id++, 0, 'J', true};
+    t[index++] = (Tuile){id++, 0, 'Z', true};
+    t[index++] = (Tuile){id++, 0, 'Z', true};
     
     return t;
 }

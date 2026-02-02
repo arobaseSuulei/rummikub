@@ -1,76 +1,11 @@
 {
-	"pseudo":	"o",
-	"tour":	false,
-	"premier_tour":	true,
-	"tuiles":	[{
-			"id":	4,
-			"valeur":	1,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	19,
-			"valeur":	5,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	78,
-			"valeur":	7,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	17,
-			"valeur":	5,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	52,
-			"valeur":	13,
-			"couleur":	"V",
-			"joker":	false
-		}, {
-			"id":	87,
-			"valeur":	9,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	83,
-			"valeur":	8,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	38,
-			"valeur":	10,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	57,
-			"valeur":	2,
-			"couleur":	"B",
-			"joker":	false
-		}, {
-			"id":	2,
-			"valeur":	1,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	39,
-			"valeur":	10,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	3,
-			"valeur":	1,
-			"couleur":	"O",
-			"joker":	false
-		}, {
-			"id":	70,
-			"valeur":	5,
-			"couleur":	"R",
-			"joker":	false
-		}, {
-			"id":	51,
-			"valeur":	13,
-			"couleur":	"O",
-			"joker":	false
-		}]
+  "pseudo":"Toto",
+  "tour":false,
+  "premier_tour": true,
+  "tuiles":[
+    {"valeur":9,"couleur":"R","joker":false},
+    {"valeur":9,"couleur":"R","joker":false},
+    {"valeur":1,"couleur":"V","joker":false},
+    {"valeur":13,"couleur":"B","joker":false}
+  ]
 }

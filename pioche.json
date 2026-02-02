@@ -1,391 +1,108 @@
-[{
-		"id":	43,
-		"valeur":	11,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	55,
-		"valeur":	1,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	20,
-		"valeur":	5,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	73,
-		"valeur":	6,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	47,
-		"valeur":	12,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	11,
-		"valeur":	3,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	27,
-		"valeur":	7,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	77,
-		"valeur":	7,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	106,
-		"valeur":	0,
-		"couleur":	"J",
-		"joker":	true
-	}, {
-		"id":	53,
-		"valeur":	1,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	96,
-		"valeur":	11,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	100,
-		"valeur":	12,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	24,
-		"valeur":	6,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	74,
-		"valeur":	6,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	45,
-		"valeur":	12,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	6,
-		"valeur":	2,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	58,
-		"valeur":	2,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	10,
-		"valeur":	3,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	22,
-		"valeur":	6,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	37,
-		"valeur":	10,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	90,
-		"valeur":	10,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	56,
-		"valeur":	1,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	59,
-		"valeur":	2,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	12,
-		"valeur":	3,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	68,
-		"valeur":	4,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	48,
-		"valeur":	12,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	101,
-		"valeur":	13,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	54,
-		"valeur":	1,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	65,
-		"valeur":	4,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	9,
-		"valeur":	3,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	103,
-		"valeur":	13,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	5,
-		"valeur":	2,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	92,
-		"valeur":	10,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	69,
-		"valeur":	5,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	7,
-		"valeur":	2,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	84,
-		"valeur":	8,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	81,
-		"valeur":	8,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	31,
-		"valeur":	8,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	63,
-		"valeur":	3,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	62,
-		"valeur":	3,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	64,
-		"valeur":	3,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	26,
-		"valeur":	7,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	40,
-		"valeur":	10,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	25,
-		"valeur":	7,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	75,
-		"valeur":	6,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	82,
-		"valeur":	8,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	44,
-		"valeur":	11,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	79,
-		"valeur":	7,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	86,
-		"valeur":	9,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	41,
-		"valeur":	11,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	35,
-		"valeur":	9,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	18,
-		"valeur":	5,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	28,
-		"valeur":	7,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	72,
-		"valeur":	5,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	33,
-		"valeur":	9,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	23,
-		"valeur":	6,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	71,
-		"valeur":	5,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	46,
-		"valeur":	12,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	13,
-		"valeur":	4,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	36,
-		"valeur":	9,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	85,
-		"valeur":	9,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	30,
-		"valeur":	8,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	80,
-		"valeur":	7,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	50,
-		"valeur":	13,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	104,
-		"valeur":	13,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	67,
-		"valeur":	4,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	99,
-		"valeur":	12,
-		"couleur":	"O",
-		"joker":	false
-	}, {
-		"id":	34,
-		"valeur":	9,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	8,
-		"valeur":	2,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	21,
-		"valeur":	6,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	94,
-		"valeur":	11,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	61,
-		"valeur":	3,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	98,
-		"valeur":	12,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	60,
-		"valeur":	2,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	76,
-		"valeur":	6,
-		"couleur":	"V",
-		"joker":	false
-	}, {
-		"id":	14,
-		"valeur":	4,
-		"couleur":	"R",
-		"joker":	false
-	}, {
-		"id":	89,
-		"valeur":	10,
-		"couleur":	"B",
-		"joker":	false
-	}, {
-		"id":	91,
-		"valeur":	10,
-		"couleur":	"O",
-		"joker":	false
-	}]
+[
+  {"valeur":3,"couleur":"R","joker":false},
+  {"valeur":0,"couleur":"J","joker":true},
+  {"valeur":10,"couleur":"R","joker":false},
+  {"valeur":2,"couleur":"B","joker":false},
+  {"valeur":9,"couleur":"V","joker":false},
+  {"valeur":2,"couleur":"R","joker":false},
+  {"valeur":3,"couleur":"O","joker":false},
+  {"valeur":9,"couleur":"B","joker":false},
+  {"valeur":11,"couleur":"V","joker":false},
+  {"valeur":2,"couleur":"O","joker":false},
+  {"valeur":9,"couleur":"O","joker":false},
+  {"valeur":7,"couleur":"O","joker":false},
+  {"valeur":4,"couleur":"B","joker":false},
+  {"valeur":12,"couleur":"R","joker":false},
+  {"valeur":13,"couleur":"V","joker":false},
+  {"valeur":4,"couleur":"R","joker":false},
+  {"valeur":3,"couleur":"O","joker":false},
+  {"valeur":6,"couleur":"V","joker":false},
+  {"valeur":13,"couleur":"B","joker":false},
+  {"valeur":13,"couleur":"O","joker":false},
+  {"valeur":13,"couleur":"R","joker":false},
+  {"valeur":11,"couleur":"O","joker":false},
+  {"valeur":9,"couleur":"B","joker":false},
+  {"valeur":4,"couleur":"R","joker":false},
+  {"valeur":1,"couleur":"R","joker":false},
+  {"valeur":12,"couleur":"V","joker":false},
+  {"valeur":13,"couleur":"B","joker":false},
+  {"valeur":12,"couleur":"O","joker":false},
+  {"valeur":10,"couleur":"R","joker":false},
+  {"valeur":1,"couleur":"B","joker":false},
+  {"valeur":5,"couleur":"B","joker":false},
+  {"valeur":4,"couleur":"B","joker":false},
+  {"valeur":5,"couleur":"R","joker":false},
+  {"valeur":8,"couleur":"B","joker":false},
+  {"valeur":8,"couleur":"B","joker":false},
+  {"valeur":1,"couleur":"R","joker":false},
+  {"valeur":2,"couleur":"R","joker":false},
+  {"valeur":5,"couleur":"O","joker":false},
+  {"valeur":11,"couleur":"R","joker":false},
+  {"valeur":7,"couleur":"V","joker":false},
+  {"valeur":3,"couleur":"V","joker":false},
+  {"valeur":5,"couleur":"B","joker":false},
+  {"valeur":6,"couleur":"O","joker":false},
+  {"valeur":1,"couleur":"V","joker":false},
+  {"valeur":7,"couleur":"B","joker":false},
+  {"valeur":5,"couleur":"V","joker":false},
+  {"valeur":10,"couleur":"B","joker":false},
+  {"valeur":11,"couleur":"B","joker":false},
+  {"valeur":13,"couleur":"O","joker":false},
+  {"valeur":2,"couleur":"V","joker":false},
+  {"valeur":13,"couleur":"R","joker":false},
+  {"valeur":7,"couleur":"V","joker":false},
+  {"valeur":2,"couleur":"B","joker":false},
+  {"valeur":8,"couleur":"O","joker":false},
+  {"valeur":1,"couleur":"O","joker":false},
+  {"valeur":10,"couleur":"V","joker":false},
+  {"valeur":3,"couleur":"B","joker":false},
+  {"valeur":12,"couleur":"V","joker":false},
+  {"valeur":5,"couleur":"R","joker":false},
+  {"valeur":7,"couleur":"O","joker":false},
+  {"valeur":4,"couleur":"V","joker":false},
+  {"valeur":2,"couleur":"O","joker":false},
+  {"valeur":6,"couleur":"B","joker":false},
+  {"valeur":0,"couleur":"J","joker":true},
+  {"valeur":8,"couleur":"R","joker":false},
+  {"valeur":1,"couleur":"B","joker":false},
+  {"valeur":8,"couleur":"V","joker":false},
+  {"valeur":8,"couleur":"O","joker":false},
+  {"valeur":6,"couleur":"O","joker":false},
+  {"valeur":4,"couleur":"V","joker":false},
+  {"valeur":6,"couleur":"B","joker":false},
+  {"valeur":2,"couleur":"V","joker":false},
+  {"valeur":9,"couleur":"R","joker":false},
+  {"valeur":4,"couleur":"O","joker":false},
+  {"valeur":9,"couleur":"R","joker":false},
+  {"valeur":10,"couleur":"B","joker":false},
+  {"valeur":6,"couleur":"V","joker":false},
+  {"valeur":6,"couleur":"R","joker":false},
+  {"valeur":7,"couleur":"R","joker":false},
+  {"valeur":13,"couleur":"V","joker":false},
+  {"valeur":7,"couleur":"B","joker":false},
+  {"valeur":5,"couleur":"V","joker":false},
+  {"valeur":3,"couleur":"B","joker":false},
+  {"valeur":1,"couleur":"V","joker":false},
+  {"valeur":11,"couleur":"O","joker":false},
+  {"valeur":10,"couleur":"O","joker":false},
+  {"valeur":12,"couleur":"B","joker":false},
+  {"valeur":11,"couleur":"R","joker":false},
+  {"valeur":12,"couleur":"R","joker":false},
+  {"valeur":11,"couleur":"B","joker":false},
+  {"valeur":6,"couleur":"R","joker":false},
+  {"valeur":12,"couleur":"O","joker":false},
+  {"valeur":8,"couleur":"R","joker":false},
+  {"valeur":10,"couleur":"V","joker":false},
+  {"valeur":3,"couleur":"V","joker":false},
+  {"valeur":3,"couleur":"R","joker":false},
+  {"valeur":4,"couleur":"O","joker":false},
+  {"valeur":12,"couleur":"B","joker":false},
+  {"valeur":9,"couleur":"O","joker":false},
+  {"valeur":5,"couleur":"O","joker":false},
+  {"valeur":7,"couleur":"R","joker":false},
+  {"valeur":8,"couleur":"V","joker":false},
+  {"valeur":1,"couleur":"O","joker":false},
+  {"valeur":11,"couleur":"V","joker":false},
+  {"valeur":10,"couleur":"O","joker":false},
+  {"valeur":9,"couleur":"V","joker":false}
+]
