@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <cjson/cJSON.h>
-#include "table.h"
-#include "struct.h"
-#include "Tuile.h"
-#include "joueur.h"  
+#include "_table.h"
+#include "_struct.h"
+#include "_Tuile.h"
+#include "_joueur.h"  
 
 static cJSON* table_json = NULL;
 static bool table_chargee = false;
@@ -70,61 +70,6 @@ void creer_table(void) {
 }
 
 /* ------------------------------------------------------------------------- */
-void afficher_table(const char* fichier_table) {
-    ordonner_table(fichier_table);
-    
-    FILE* f = fopen(fichier_table, "r");
-    if (!f) {
-        printf("Table vide ou fichier %s non trouvé\n", fichier_table);
-        return;
-    }
-    
-    fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    char* data = malloc(fsize + 1);
-    fread(data, 1, fsize, f);
-    data[fsize] = 0;
-    fclose(f);
-    
-    cJSON* root = cJSON_Parse(data);
-    free(data);
-    if (!root) {
-        printf("Erreur de lecture de la table\n");
-        return;
-    }
-    
-    int nb_comb = cJSON_GetArraySize(root);
-    printf("\n=== TABLE (%d combinaison%s) ===\n", nb_comb, nb_comb > 1 ? "s" : "");
-    
-    if (nb_comb == 0) {
-        printf("Aucune combinaison sur la table.\n");
-    }
-    
-    for (int i = 0; i < nb_comb; i++) {
-        cJSON* comb = cJSON_GetArrayItem(root, i);
-        int nb_tuiles = cJSON_GetArraySize(comb);
-        
-        printf("[%d] ", i);
-        for (int j = 0; j < nb_tuiles; j++) {
-            cJSON* tuile_json = cJSON_GetArrayItem(comb, j);
-            int valeur = cJSON_GetObjectItem(tuile_json, "valeur")->valueint;
-            char couleur = cJSON_GetObjectItem(tuile_json, "couleur")->valuestring[0];
-            bool joker = cJSON_IsTrue(cJSON_GetObjectItem(tuile_json, "joker"));
-            
-            if (joker) {
-                printf("[J] ");
-            } else {
-                printf("%d%c ", valeur, couleur);
-            }
-        }
-        printf("\n");
-    }
-    printf("=============================\n");
-    
-    cJSON_Delete(root);
-}
-
 void ordonner_table(const char* fichier) {
     FILE* f = fopen(fichier, "r");
     if (!f) return;
@@ -244,3 +189,4 @@ void ordonner_table(const char* fichier) {
     free(str);
     cJSON_Delete(root);
 }
+/* ------------------------------------------------------------------------- */
